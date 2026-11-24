@@ -30,7 +30,7 @@ ceux de la base sont générés au premier démarrage.
 | travailler sans Internet | `ESTRAN_MODE=snapshot` dans `.env` (voir `.env.example`) |
 | lancer les tests du serveur | `docker compose -f compose.test.yaml run --rm tests` |
 | lancer les tests de l'interface | `docker compose -f compose.test.yaml run --rm web-tests` |
-| prouver le durcissement | `bash scripts/check-hardening.sh` (62 vérifications sur la pile en marche) |
+| prouver le durcissement | `bash scripts/check-hardening.sh` (66 vérifications sur la pile en marche) |
 | scanner secrets, dépendances et images | `bash scripts/security-scan.sh` |
 | voir ce qui est sorti vers Internet | `docker compose logs proxy` |
 | tout arrêter | `docker compose down` (ajouter `-v` pour effacer la base) |

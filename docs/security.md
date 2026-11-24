@@ -5,7 +5,7 @@ Chaque mesure annoncée ici est vérifiée par un script que l'on peut relancer 
 
 ```bash
 docker compose up -d --build
-bash scripts/check-hardening.sh   # 62 vérifications sur la pile en marche
+bash scripts/check-hardening.sh   # 66 vérifications sur la pile en marche
 bash scripts/security-scan.sh     # secrets, configuration, dépendances, images, inventaire
 ```
 
@@ -106,6 +106,9 @@ indépendantes pour la même garantie.
 
 Au premier lancement, le service `secrets` crée trois mots de passe aléatoires (256 bits)
 dans un volume Docker, un par rôle de base. Ils ne sont jamais affichés ni journalisés.
+Chaque fichier est créé directement avec ses droits définitifs (`440`) : lisible par son
+propriétaire et un groupe, jamais par « tous ». La base, qui tourne sous un autre utilisateur,
+y accède par ce groupe.
 
 | Qui | Ce qu'il monte | Rôle dans la base |
 |---|---|---|

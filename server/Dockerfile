@@ -18,7 +18,7 @@ RUN python -m pip uninstall --yes --quiet setuptools wheel pip 2>/dev/null; \
 RUN groupadd --system --gid 10001 estran \
     && useradd --system --uid 10001 --gid estran --no-create-home --shell /usr/sbin/nologin estran \
     # Le volume des secrets, monté ici, hérite de ce propriétaire à sa création.
-    && install -d -o estran -g estran -m 0755 /run/estran-secrets
+    && install -d -o estran -g estran -m 0750 /run/estran-secrets
 WORKDIR /app/server
 
 FROM base AS build

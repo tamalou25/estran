@@ -121,6 +121,11 @@ for service in api collector; do
   seen="$(inside "$service" sh -c 'find /run/secrets /run/estran-secrets -type f 2>/dev/null' | tr -d '\r' | tr '\n' ' ')"
   if [ "$seen" = "/run/secrets/estran/password " ]; then ok "$service : ne voit que son propre mot de passe"; else ko "$service : voit d'autres secrets ($seen)"; fi
 done
+for service in db api collector; do
+  rights="$(inside "$service" stat -c '%a' /run/secrets/estran/password 2>/dev/null | tr -d '\r')"
+  if [ "$rights" = "440" ]; then ok "$service : mot de passe illisible par les autres utilisateurs (droits 440)"; else ko "$service : droits du mot de passe trop larges ($rights)"; fi
+done
+expect_success "db : lit son mot de passe (par le groupe, sans en être propriétaire)" inside db sh -c 'test -r /run/secrets/estran/password && [ "$(stat -c %u /run/secrets/estran/password)" != "$(id -u)" ]'
 if docker compose config | grep -Eiq '(password|secret)[a-z_]*: *[^/ ]'; then
   ko "un mot de passe figure en clair dans la configuration"
 else

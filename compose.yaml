@@ -48,6 +48,9 @@ services:
       dockerfile: infra/db/Dockerfile
     image: estran-db
     user: "999:999"   # l'utilisateur « postgres » de l'image, dès le démarrage
+    # Le fichier du mot de passe n'est lisible que par son propriétaire et le groupe 10001 :
+    # la base, qui tourne sous un autre utilisateur, y accède par ce groupe.
+    group_add: ["10001"]
     environment:
       POSTGRES_DB: estran
       POSTGRES_USER: estran
