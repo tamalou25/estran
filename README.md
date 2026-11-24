@@ -7,9 +7,9 @@ sous-marins sortent de l'eau. Estran est une plateforme locale qui branche des s
 données ouvertes et en fait **un seul monde d'objets reliés entre eux**, où chaque information
 garde la trace de sa source et de sa licence.
 
-> État : **phase 0a** (socle fonctionnel). Une source branchée, le catalogue CISA KEV des
-> vulnérabilités dont l'exploitation est avérée. La [feuille de route](#feuille-de-route) dit
-> ce qui vient ensuite.
+> État : **phases 0a et 0b** (socle fonctionnel, puis durci). Une source branchée, le catalogue
+> CISA KEV des vulnérabilités dont l'exploitation est avérée. La
+> [feuille de route](#feuille-de-route) dit ce qui vient ensuite.
 
 ## Démarrage
 
@@ -19,8 +19,9 @@ Prérequis : [Docker Desktop](https://www.docker.com/products/docker-desktop/) l
 docker compose up -d --build
 ```
 
-Puis ouvrir <http://127.0.0.1:8080>. Au premier lancement, compter une à deux minutes de
-construction ; la première collecte suit en quelques secondes.
+Puis ouvrir <http://127.0.0.1:8080>. Au premier lancement, compter quelques minutes de
+construction ; la première collecte suit en quelques secondes. Aucun mot de passe à choisir :
+ceux de la base sont générés au premier démarrage.
 
 | Pour… | Commande |
 |---|---|
@@ -29,6 +30,9 @@ construction ; la première collecte suit en quelques secondes.
 | travailler sans Internet | `ESTRAN_MODE=snapshot` dans `.env` (voir `.env.example`) |
 | lancer les tests du serveur | `docker compose -f compose.test.yaml run --rm tests` |
 | lancer les tests de l'interface | `docker compose -f compose.test.yaml run --rm web-tests` |
+| prouver le durcissement | `bash scripts/check-hardening.sh` (62 vérifications sur la pile en marche) |
+| scanner secrets, dépendances et images | `bash scripts/security-scan.sh` |
+| voir ce qui est sorti vers Internet | `docker compose logs proxy` |
 | tout arrêter | `docker compose down` (ajouter `-v` pour effacer la base) |
 
 ## Ce qu'on y voit
@@ -65,20 +69,34 @@ avoir d'instantané embarqué. Détail des sources : [`docs/sources.md`](docs/so
 
 ```mermaid
 flowchart LR
-  KEV["CISA KEV (HTTPS)"] --> COL
-  subgraph Docker["docker compose"]
-    COL["collector : connecteurs + planificateur"] --> DB[("PostgreSQL 18 + PostGIS")]
-    MIG["migrate : schéma"] --> DB
-    DB --> API["api : FastAPI, lecture seule"]
-    API --> WEB["web : nginx + interface React"]
-  end
+  NAV["Navigateur"] -->|"127.0.0.1:8080"| WEB["web : nginx + interface React"]
+  WEB -->|"réseau app"| API["api : FastAPI, lecture seule"]
+  API -->|"réseau data"| DB[("PostgreSQL 18 + PostGIS")]
+  COL["collector : connecteurs + planificateur"] -->|"réseau data"| DB
+  COL -->|"réseau collect"| PX["proxy : liste blanche"]
+  PX -->|"HTTPS"| KEV["CISA KEV"]
   ONT["ontology.yaml"] -.-> COL
   ONT -.-> API
-  WEB --> NAV["Navigateur, 127.0.0.1:8080"]
 ```
 
-Seul le port de l'interface est publié, et seulement sur `127.0.0.1`. Plus de détails :
-[`docs/architecture.md`](docs/architecture.md).
+Seul le port de l'interface est publié, et seulement sur `127.0.0.1`. Les réseaux `app`, `data`
+et `collect` n'ont aucune route vers Internet : seul le proxy sort, en HTTPS, vers les hôtes
+que les connecteurs déclarent. Détails : [`docs/architecture.md`](docs/architecture.md).
+
+## Sécurité
+
+| Mesure | En pratique |
+|---|---|
+| Réseaux cloisonnés | `api` et `db` ne peuvent pas joindre Internet ; `web` ne voit pas la base |
+| Proxy sortant | Liste blanche générée depuis les manifestes des connecteurs ; un test échoue si elle dérive |
+| Moindre privilège | Aucun conteneur en root, aucune capacité Linux, systèmes de fichiers en lecture seule |
+| Base de données | Un rôle par service : l'API ne peut que lire, le collecteur ne peut ni supprimer ni toucher au schéma |
+| Secrets | Générés au premier lancement, jamais dans le dépôt ni dans l'environnement |
+| Entrée HTTP | En-têtes de sécurité (CSP stricte), méthodes de lecture seules, limite de débit |
+| Chaîne d'approvisionnement | Versions verrouillées, scan des images à chaque commit, inventaire (SBOM) |
+
+Chaque ligne est vérifiée par `scripts/check-hardening.sh` ou `scripts/security-scan.sh`.
+Modèle de menaces et **limites assumées** : [`docs/security.md`](docs/security.md).
 
 | Brique | Choix |
 |---|---|
@@ -91,14 +109,16 @@ Seul le port de l'interface est publié, et seulement sur `127.0.0.1`. Plus de d
 | | Phase | Contenu |
 |---|---|---|
 | fait | 0a — Socle | Ontologie, base, connecteur KEV, API, interface |
-| | 0b — Durcissement | Réseaux cloisonnés, proxy sortant à liste blanche, conteneurs en lecture seule, scans |
+| fait | 0b — Durcissement | Réseaux cloisonnés, proxy sortant à liste blanche, conteneurs en lecture seule, scans |
 | | 1 — Couche Menace | CVE, EPSS, MITRE ATT&CK, CERT-FR, abuse.ch ; explorateur de graphe |
 | | 2 — Mon parc | Croiser l'inventaire d'un lab avec les vulnérabilités exploitées |
 | | Bonus | Territoire et Infrastructure (carte, câbles, pannes), enquêtes, assistant local |
 
 ## Limites connues
 
-- Pas de cloisonnement réseau ni de proxy sortant avant la phase 0b.
+- Pas d'authentification ni de TLS : acceptable sur une seule machine avec des données publiques, à revoir ensuite.
+- Sous Docker Desktop, le conteneur `web` garde une sortie vers Internet (voir `docs/security.md`).
+- La CI n'a pas encore tourné : le dépôt n'est pas publié.
 - Une seule source : les objets ne sont reliés qu'entre vulnérabilités, produits et éditeurs.
 - Deux produits dont les noms ne diffèrent que par la ponctuation sont fusionnés.
 

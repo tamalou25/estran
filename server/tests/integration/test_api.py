@@ -47,6 +47,12 @@ def test_stats_count_objects_by_type(api):
     }
 
 
+def test_schema_is_published_but_no_page_loading_third_party_scripts(api):
+    assert api.get("/api/openapi.json").status_code == 200
+    assert api.get("/api/docs").status_code == 404
+    assert api.get("/docs").status_code == 404
+
+
 @pytest.mark.parametrize("method", ["post", "put", "patch", "delete"])
 def test_api_is_read_only(api, method):
     response = getattr(api, method)("/api/objects")

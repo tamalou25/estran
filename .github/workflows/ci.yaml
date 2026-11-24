@@ -1,33 +1,74 @@
 # Les mêmes commandes qu'en local : si ça passe ici, ça passe sur une machine neuve.
-# Les scans d'images, la détection de secrets et le SBOM s'ajoutent en phase 0b.
+# Les actions sont épinglées par empreinte de commit (une étiquette peut être déplacée,
+# pas une empreinte) ; Dependabot propose leurs mises à jour.
 
 name: ci
 
 on:
   push:
   pull_request:
+  schedule:
+    # Chaque lundi : une vulnérabilité publiée après le dernier commit est quand même vue.
+    - cron: "17 5 * * 1"
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   server:
+    name: Serveur — lint, typage, tests sur vraie base
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - name: Lint, typage et tests du serveur (sur vraie base PostGIS)
-        run: docker compose -f compose.test.yaml run --rm tests
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: docker compose -f compose.test.yaml run --rm tests
 
   web:
+    name: Interface — lint, typage, tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - name: Lint, typage et tests de l'interface
-        run: docker compose -f compose.test.yaml run --rm web-tests
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: docker compose -f compose.test.yaml run --rm web-tests
 
-  images:
+  security:
+    name: Sécurité — pile durcie, scans, inventaire
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - name: Construction des images de production
-        run: docker compose build
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # gitleaks lit tout l'historique
+          persist-credentials: false
+
+      - name: Lancer la pile complète
+        run: |
+          docker compose up -d --build
+          timeout 180 sh -c 'until [ "$(docker inspect -f "{{.State.Health.Status}}" estran-web-1)" = healthy ]; do sleep 3; done'
+          docker compose ps -a
+
+      - name: Prouver le durcissement (cloisonnement, proxy, privilèges, rôles, en-têtes)
+        run: bash scripts/check-hardening.sh
+
+      - name: Scanner (secrets, configuration, dépendances, images) et produire l'inventaire
+        run: bash scripts/security-scan.sh
+
+      - name: Publier l'inventaire des composants (SBOM CycloneDX)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sbom
+          path: sbom/
+          if-no-files-found: warn
+
+      - name: Journaux en cas d'échec
+        if: failure()
+        run: docker compose logs --no-color --tail 80

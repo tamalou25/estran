@@ -29,3 +29,6 @@ estran-plan-0a.md
 Thumbs.db
 .vscode/
 .idea/
+
+# Inventaires générés par scripts/security-scan.sh
+sbom/

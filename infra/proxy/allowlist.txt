@@ -1,0 +1,4 @@
+# Fichier généré : ne pas modifier à la main.
+# Hôtes que le proxy sortant laisse joindre, tirés des manifestes des connecteurs.
+# Régénérer : python -m estran.collector allowlist --write infra/proxy/allowlist.txt
+www.cisa.gov

@@ -1,11 +1,11 @@
 """Alembic environment. The database URL is handed over by estran.db.migrate."""
 
 from alembic import context
-from sqlalchemy import create_engine
+from sqlalchemy import URL, create_engine
 
 from estran.db.tables import metadata
 
-url: str = context.config.attributes["url"]
+url: str | URL = context.config.attributes["url"]
 
 if context.is_offline_mode():
     context.configure(url=url, target_metadata=metadata, literal_binds=True)

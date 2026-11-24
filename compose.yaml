@@ -1,8 +1,22 @@
-# Estran — phase 0a. Lancement : docker compose up -d --build
-# Seule l'interface est joignable, et uniquement depuis cette machine (127.0.0.1).
-# Le cloisonnement réseau et le proxy sortant arrivent en phase 0b.
+# Estran — lancement : docker compose up -d --build
+#
+# Qui parle à qui (les réseaux « internal » n'ont aucune route vers Internet) :
+#
+#   navigateur ─ 127.0.0.1:8080 ─► web ─[app]─► api ─[data]─► db
+#                                                  collector ─[data]─► db
+#   Internet ◄─[egress]─ proxy ◄─[collect]─ collector      (liste blanche, HTTPS seul)
+#
+# Détail et justification de chaque choix : docs/security.md
 
 name: estran
+
+# Appliqué à tous les services : aucun privilège, système de fichiers en lecture seule.
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  pids_limit: 200
+  restart: unless-stopped
 
 x-server: &server
   build:
@@ -10,53 +24,124 @@ x-server: &server
     dockerfile: server/Dockerfile
     target: runtime
   image: estran-server
-  environment:
-    # La base n'est joignable que depuis le réseau Docker : le mot de passe par défaut permet
-    # un lancement sans configuration. Pour le changer : copier .env.example en .env.
-    ESTRAN_DATABASE_URL: postgresql+psycopg://estran:${POSTGRES_PASSWORD:-estran}@db:5432/estran
-    ESTRAN_MODE: ${ESTRAN_MODE:-live}
+
+x-database: &database
+  ESTRAN_DATABASE_HOST: db
+  ESTRAN_DATABASE_NAME: estran
+  # Chaque service ne voit que son propre mot de passe, monté à cet endroit.
+  ESTRAN_DATABASE_PASSWORD_FILE: /run/secrets/estran/password
 
 services:
+  # Crée au premier lancement un mot de passe aléatoire par rôle de base, puis s'arrête.
+  secrets:
+    <<: [*hardening, *server]
+    command: ["python", "-m", "estran.bootstrap", "/run/estran-secrets"]
+    network_mode: none
+    volumes:
+      - secrets:/run/estran-secrets
+    restart: "no"
+
   db:
-    image: postgis/postgis:18-3.7
+    <<: *hardening
+    build:
+      context: .
+      dockerfile: infra/db/Dockerfile
+    image: estran-db
+    user: "999:999"   # l'utilisateur « postgres » de l'image, dès le démarrage
     environment:
       POSTGRES_DB: estran
       POSTGRES_USER: estran
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-estran}
+      POSTGRES_PASSWORD_FILE: /run/secrets/estran/password
     volumes:
-      - db-data:/var/lib/postgresql
+      - db:/var/lib/postgresql
+      - type: volume
+        source: secrets
+        target: /run/secrets/estran
+        read_only: true
+        volume:
+          subpath: owner
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    networks: [data]
+    mem_limit: 1g
+    depends_on:
+      secrets:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U estran -d estran"]
       interval: 5s
       timeout: 3s
       retries: 20
-    restart: unless-stopped
 
-  # Met le schéma à jour puis s'arrête. Les autres services attendent qu'il ait réussi.
+  # Met le schéma à jour, crée les rôles restreints, puis s'arrête.
+  # C'est le seul service qui se connecte en propriétaire de la base.
   migrate:
-    <<: *server
+    <<: [*hardening, *server]
     command: ["python", "-m", "estran.db.migrate"]
+    environment:
+      <<: *database
+      ESTRAN_DATABASE_USER: estran
+      ESTRAN_DATABASE_PASSWORD_FILE: /run/secrets/all/owner/password
+      ESTRAN_ROLE_PASSWORDS_DIR: /run/secrets/all
+    volumes:
+      - secrets:/run/secrets/all:ro
+    networks: [data]
+    mem_limit: 512m
     depends_on:
       db:
         condition: service_healthy
     restart: "no"
 
+  # Ne sort jamais directement : toute requête passe par le proxy.
   collector:
-    <<: *server
+    <<: [*hardening, *server]
     command: ["python", "-m", "estran.collector", "serve"]
+    environment:
+      <<: *database
+      ESTRAN_DATABASE_USER: estran_collector
+      ESTRAN_MODE: ${ESTRAN_MODE:-live}
+      HTTPS_PROXY: http://proxy:3128
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets/estran
+        read_only: true
+        volume:
+          subpath: collector
+    tmpfs:
+      - /tmp
+    networks: [data, collect]
+    mem_limit: 512m
     depends_on:
       migrate:
         condition: service_completed_successfully
+      proxy:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-m", "estran.collector", "health"]
       interval: 30s
       timeout: 10s
       start_period: 60s
       retries: 3
-    restart: unless-stopped
 
+  # Lecture seule jusque dans la base : son rôle n'a que le droit SELECT.
   api:
-    <<: *server
+    <<: [*hardening, *server]
+    environment:
+      <<: *database
+      ESTRAN_DATABASE_USER: estran_api
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/secrets/estran
+        read_only: true
+        volume:
+          subpath: api
+    tmpfs:
+      - /tmp
+    networks: [data, app]
+    mem_limit: 512m
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -70,9 +155,29 @@ services:
       timeout: 5s
       start_period: 20s
       retries: 5
-    restart: unless-stopped
+
+  # Seule sortie vers Internet : tunnels HTTPS vers les hôtes déclarés par les connecteurs.
+  proxy:
+    <<: *hardening
+    build:
+      context: .
+      dockerfile: infra/proxy/Dockerfile
+    image: estran-proxy
+    tmpfs:
+      - /tmp
+    networks: [collect, egress]
+    mem_limit: 256m
+    healthcheck:
+      # Le port 3128 (0C38 en hexadécimal) est-il en écoute (état 0A) ? Lu dans /proc, sans
+      # ouvrir de connexion : le journal du proxy ne contient ainsi que de vraies sorties.
+      test: ["CMD-SHELL", "grep -qs ':0C38 [0-9A-F:]* 0A ' /proc/net/tcp /proc/net/tcp6"]
+      interval: 10s
+      timeout: 3s
+      start_period: 10s
+      retries: 5
 
   web:
+    <<: *hardening
     build:
       context: .
       dockerfile: web/Dockerfile
@@ -80,6 +185,10 @@ services:
     image: estran-web
     ports:
       - "127.0.0.1:${ESTRAN_WEB_PORT:-8080}:8080"
+    tmpfs:
+      - /tmp
+    networks: [app, front]
+    mem_limit: 128m
     depends_on:
       api:
         condition: service_healthy
@@ -88,7 +197,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+
+networks:
+  # Docker exige un réseau non interne pour publier un port : web y est seul.
+  # Désactiver la traduction d'adresse coupe la sortie de ce réseau sur un moteur Docker
+  # Linux natif. Sous Docker Desktop, la sortie reste possible : voir docs/security.md.
+  front:
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  app:
+    internal: true
+  data:
+    internal: true
+  collect:
+    internal: true
+  # Le proxy y est seul.
+  egress:
 
 volumes:
-  db-data:
+  # Nouveau nom en 0b : la base de la 0a (volume « db-data », mot de passe par défaut) n'est
+  # pas réutilisée. Elle peut être supprimée : docker volume rm estran_db-data
+  db:
+  secrets:

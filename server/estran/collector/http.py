@@ -1,5 +1,6 @@
 """The only door to the Internet: HTTPS, declared hosts only, bounded size, no redirects."""
 
+import zlib
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -44,7 +45,8 @@ class HttpClient:
             transport=transport,
             timeout=timeout,
             follow_redirects=False,
-            headers={"User-Agent": USER_AGENT},
+            # Only gzip is advertised: it is the one encoding inflated under a size limit here.
+            headers={"User-Agent": USER_AGENT, "Accept-Encoding": "gzip"},
         )
 
     def close(self) -> None:
@@ -72,9 +74,29 @@ class HttpClient:
             raise HttpError(f"{url} refused: host not declared in the connector manifest")
 
     def _read_bounded(self, url: str, response: httpx.Response) -> bytes:
+        """Read the body without ever holding more than the limit, compressed or not.
+
+        The raw stream is read and inflated here, step by step, instead of letting the HTTP
+        library decompress: a few kilobytes of gzip can expand to gigabytes.
+        """
+        encoding = response.headers.get("Content-Encoding", "identity").strip().lower()
+        if encoding not in ("identity", "gzip"):
+            raise HttpError(f"{url} uses content encoding '{encoding}', which is not accepted")
+        inflater = zlib.decompressobj(zlib.MAX_WBITS | 16) if encoding == "gzip" else None
+        too_large = HttpError(f"{url} is larger than the {self._max_bytes} bytes allowed")
+
         body = bytearray()
-        for chunk in response.iter_bytes():
-            body += chunk
+        for chunk in response.iter_raw():
+            if inflater is None:
+                body += chunk
+            else:
+                try:
+                    # at most one byte over the limit is ever produced
+                    body += inflater.decompress(chunk, self._max_bytes + 1 - len(body))
+                except zlib.error as error:
+                    raise HttpError(f"{url} sent invalid gzip data: {error}") from error
+                if inflater.unconsumed_tail:
+                    raise too_large
             if len(body) > self._max_bytes:
-                raise HttpError(f"{url} is larger than the {self._max_bytes} bytes allowed")
+                raise too_large
         return bytes(body)

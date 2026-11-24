@@ -4,6 +4,7 @@ from pathlib import Path
 import httpx
 import pytest
 from sqlalchemy import Engine, text
+from support import served
 
 from estran.collector.connectors.kev import KevConnector
 from estran.collector.http import HttpClient
@@ -128,7 +129,7 @@ def test_live_run_downloads_from_the_declared_url(engine, ontology, snapshot_dir
 
     def handler(request: httpx.Request) -> httpx.Response:
         requested.append(str(request.url))
-        return httpx.Response(200, content=(fixtures_dir / "kev_sample.json").read_bytes())
+        return served((fixtures_dir / "kev_sample.json").read_bytes())
 
     result = run_connector(
         engine,
@@ -155,9 +156,7 @@ def test_live_run_sends_the_last_etag_and_respects_not_modified(
         etags.append(request.headers.get("If-None-Match"))
         if request.headers.get("If-None-Match") == '"v1"':
             return httpx.Response(304)
-        return httpx.Response(
-            200, content=(fixtures_dir / "kev_sample.json").read_bytes(), headers={"ETag": '"v1"'}
-        )
+        return served((fixtures_dir / "kev_sample.json").read_bytes(), headers={"ETag": '"v1"'})
 
     client = client_answering(handler)
     connector = KevConnector()
@@ -223,7 +222,7 @@ def test_unusable_document_fails_the_run_without_touching_the_data(engine, ontol
     run_connector(engine, ontology, connector, mode="snapshot", snapshot_dir=snapshot_dir)
 
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, content=b"<html>maintenance</html>")
+        return served(b"<html>maintenance</html>")
 
     result = run_connector(
         engine,

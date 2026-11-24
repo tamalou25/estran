@@ -4,12 +4,15 @@ python -m estran.collector serve        run every connector on schedule (the con
 python -m estran.collector run kev      run one connector now
 python -m estran.collector list         list available connectors
 python -m estran.collector health       exit 0 if the scheduler loop is alive
+python -m estran.collector allowlist    print the hosts the egress proxy must let through
 """
 
 import argparse
 import logging
 import sys
+from pathlib import Path
 
+from estran.collector import allowlist
 from estran.collector.connectors import REGISTRY
 from estran.collector.runner import run_connector
 from estran.collector.scheduler import is_alive, serve
@@ -24,23 +27,33 @@ def main(argv: list[str] | None = None) -> int:
     commands.add_parser("serve")
     commands.add_parser("list")
     commands.add_parser("health")
+    allow = commands.add_parser("allowlist")
+    allow.add_argument("--write", type=Path, help="write the file instead of printing it")
     run = commands.add_parser("run")
     run.add_argument("connector", choices=sorted(REGISTRY))
     run.add_argument("--mode", choices=["live", "snapshot"])
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    settings = get_settings()
 
+    # These two need no database: they only read the connector manifests.
+    if args.command == "allowlist":
+        if args.write:
+            args.write.write_text(allowlist.render(), encoding="utf-8", newline="\n")
+        else:
+            sys.stdout.write(allowlist.render())
+        return 0
     if args.command == "list":
         for name, connector in sorted(REGISTRY.items()):
             manifest = connector.manifest
             print(f"{name}\t{manifest.name}\t{manifest.licence}")  # noqa: T201
         return 0
+
+    settings = get_settings()
     if args.command == "health":
         return 0 if is_alive(settings.heartbeat_file) else 1
 
-    engine = create_db_engine(settings.database_url)
+    engine = create_db_engine(settings.db_url())
     ontology = load_ontology(settings.ontology_path)
     if args.command == "serve":
         serve(

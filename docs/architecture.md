@@ -1,17 +1,22 @@
-# Architecture (phase 0a)
+# Architecture
 
 ## Les services
 
-| Service | Rôle | Joignable depuis |
-|---|---|---|
-| `db` | PostgreSQL 18 + PostGIS | les autres conteneurs seulement |
-| `migrate` | applique les migrations puis s'arrête | — |
-| `collector` | lance les connecteurs selon leur cadence | — (il sort vers Internet) |
-| `api` | API FastAPI en lecture seule | `web` seulement |
-| `web` | nginx : sert l'interface, relaie `/api/` vers `api` | `127.0.0.1:8080` |
+| Service | Rôle | Réseaux | Utilisateur |
+|---|---|---|---|
+| `secrets` | crée les mots de passe de la base au premier lancement, puis s'arrête | aucun | 10001 |
+| `db` | PostgreSQL 18 + PostGIS | `data` | 999 (postgres) |
+| `migrate` | applique les migrations, crée les rôles restreints, puis s'arrête | `data` | 10001 |
+| `collector` | lance les connecteurs selon leur cadence | `data`, `collect` | 10001 |
+| `proxy` | seule sortie vers Internet : HTTPS vers les hôtes déclarés | `collect`, `egress` | 13 (proxy) |
+| `api` | API FastAPI en lecture seule | `data`, `app` | 10001 |
+| `web` | nginx : sert l'interface, relaie `/api/` vers `api` | `app`, `front` | 100 (nginx) |
 
-`api` et `collector` attendent que `migrate` ait réussi ; `web` attend que `api` soit en bonne
-santé. `api`, `collector` et `migrate` partagent la même image : seule la commande change.
+`data`, `app` et `collect` sont des réseaux internes : aucune route vers Internet. Seul `web`
+publie un port, sur `127.0.0.1:8080`. `secrets`, `migrate`, `collector` et `api` partagent la
+même image : seule la commande change.
+
+Ordre de démarrage : `secrets` → `db` → `migrate` → `api` et `collector` → `web`.
 
 ## Le trajet d'une donnée
 
@@ -60,7 +65,7 @@ Ajouter un type d'objet ne demande **aucune migration** : on le déclare dans `o
 
 ## L'API
 
-Toutes les routes sont en `GET`. Documentation interactive : `/api/docs`.
+Toutes les routes sont en `GET`. Schéma OpenAPI : `/api/openapi.json`.
 
 | Route | Réponse |
 |---|---|
@@ -75,12 +80,7 @@ Toutes les routes sont en `GET`. Documentation interactive : `/api/docs`.
 Le tri et les filtres sont vérifiés contre l'ontologie avant d'atteindre la base ; toutes les
 valeurs sont des paramètres liés.
 
-## Sécurité : ce qui est là, ce qui arrive
+## Sécurité
 
-**En 0a** : seul `web` publie un port, sur `127.0.0.1` ; la base n'est pas exposée ; SQL
-paramétré ; entrées validées ; nginx tourne sans privilèges ; l'interface n'interprète jamais
-une donnée collectée comme du HTML.
-
-**En 0b** : réseaux Docker cloisonnés, proxy sortant à liste blanche générée depuis les
-manifestes, conteneurs non-root en lecture seule, rôles de base séparés, en-têtes de sécurité,
-scan d'images, détection de secrets, SBOM, modèle de menaces.
+Cloisonnement, proxy, privilèges, rôles de base, secrets, modèle de menaces et limites
+assumées : voir [`security.md`](security.md).

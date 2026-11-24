@@ -13,8 +13,14 @@ FROM deps AS build
 COPY web ./
 RUN npm run build
 
-# nginx sans privilèges : tourne sous un utilisateur ordinaire et écoute sur 8080.
-FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
-COPY web/nginx.conf /etc/nginx/conf.d/default.conf
+# nginx fourni par Alpine (suivi et corrigé par la distribution), lancé directement sous
+# l'utilisateur « nginx » : aucun processus root, écoute sur 8080.
+FROM alpine:3.24 AS runtime
+RUN apk add --no-cache nginx \
+    && apk upgrade --no-cache
+COPY web/nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /web/dist /usr/share/nginx/html
+USER nginx
 EXPOSE 8080
+# -e : journal d'erreurs sur la sortie du conteneur dès le démarrage (rien n'est écrit sur disque).
+CMD ["nginx", "-e", "/dev/stderr", "-g", "daemon off;"]
