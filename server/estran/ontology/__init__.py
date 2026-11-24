@@ -8,7 +8,12 @@ from estran.ontology.schema import (
     Ontology,
     PropertyType,
 )
-from estran.ontology.validator import RecordError, validate_link, validate_object
+from estran.ontology.validator import (
+    RecordError,
+    validate_link,
+    validate_object,
+    validate_properties,
+)
 
 __all__ = [
     "BUILTIN_SORT_KEYS",
@@ -22,4 +27,5 @@ __all__ = [
     "parse_ontology",
     "validate_link",
     "validate_object",
+    "validate_properties",
 ]

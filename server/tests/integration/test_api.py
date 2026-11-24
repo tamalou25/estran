@@ -31,7 +31,7 @@ def test_health_reports_a_reachable_database(api):
 def test_ontology_is_served_as_the_interface_expects_it(api):
     body = api.get("/api/ontology").json()
 
-    assert set(body["object_types"]) == {"vulnerability", "product", "vendor"}
+    assert {"vulnerability", "product", "vendor"} <= set(body["object_types"])
     assert body["link_types"]["affects"]["from"] == "vulnerability"
     assert body["link_types"]["affects"]["to"] == "product"
     assert body["object_types"]["vulnerability"]["properties"]["ransomware_use"]["values"] == {

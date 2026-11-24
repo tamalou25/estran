@@ -65,10 +65,18 @@ def minimal(**changes: Any) -> dict[str, Any]:
 def test_project_ontology_loads_with_the_phase_0a_types(ontology_path):
     ontology = load_ontology(ontology_path)
 
-    assert set(ontology.object_types) == {"vulnerability", "product", "vendor"}
-    assert set(ontology.link_types) == {"affects", "made_by"}
+    assert {"vulnerability", "product", "vendor"} <= set(ontology.object_types)
+    assert {"affects", "made_by"} <= set(ontology.link_types)
     assert ontology.link_types["affects"].source == "vulnerability"
     assert ontology.link_types["affects"].target == "product"
+
+
+def test_unit_is_only_allowed_on_numbers():
+    data = minimal()
+    data["object_types"]["product"]["properties"]["name"]["unit"] = "percent"
+
+    with pytest.raises(OntologyError, match="unit"):
+        parse_ontology(data)
 
 
 def test_link_type_pointing_to_an_unknown_object_type_is_rejected():

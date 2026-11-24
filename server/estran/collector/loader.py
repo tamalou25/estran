@@ -4,16 +4,16 @@ Objects are upserted on (type, key) and links on (type, source, target). Propert
 several sources are merged, and `provenance` remembers which source provided which fields.
 """
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from typing import Any
 
 from sqlalchemy import Connection, bindparam, func, tuple_, update
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import JSONB, insert
 
-from estran.collector.sdk import LinkRecord, ObjectRecord, ObjectRef
+from estran.collector.sdk import EnrichmentRecord, LinkRecord, ObjectRecord, ObjectRef
 from estran.db.tables import links, objects, provenance
-from estran.ontology import Ontology
+from estran.ontology import Ontology, RecordError, validate_properties
 
 BATCH = 500
 
@@ -53,6 +53,65 @@ def load(
         connection, "link_id", [(link_id, []) for link_id in link_ids], run_id, source_id
     )
     return LoadCounts(len(unique_objects), len(resolved), len(unique_links) - len(resolved))
+
+
+def enrich(
+    connection: Connection,
+    ontology: Ontology,
+    *,
+    run_id: int,
+    source_id: str,
+    types: Sequence[str],
+    records: Iterable[EnrichmentRecord],
+) -> tuple[int, int]:
+    """Add fields to objects that already exist. Returns (objects enriched, invalid records).
+
+    A record about an object Estran does not hold is ignored: that is expected, not an error
+    (a score exists for every CVE in the world, Estran keeps only the ones it knows).
+    Enrichment fields are scores and dates; the searchable text is not recomputed.
+    """
+    if not types:
+        return 0, sum(1 for _ in records)
+    known = {
+        (row.type, row.key): row.id
+        for row in connection.execute(
+            objects.select()
+            .with_only_columns(objects.c.id, objects.c.type, objects.c.key)
+            .where(objects.c.type.in_(list(types)))
+        )
+    }
+    updates: dict[int, dict[str, Any]] = {}
+    invalid = 0
+    for record in records:
+        object_id = known.get((record.type, record.key))
+        if object_id is None:
+            continue
+        try:
+            properties = validate_properties(ontology, record.type, record.properties)
+        except RecordError:
+            invalid += 1
+            continue
+        if properties:
+            updates.setdefault(object_id, {}).update(properties)
+
+    statement = (
+        update(objects)
+        .where(objects.c.id == bindparam("object_id"))
+        .values(
+            properties=objects.c.properties.op("||")(bindparam("added", type_=JSONB)),
+            last_seen=func.now(),
+        )
+    )
+    for batch in _batches(list(updates.items())):
+        connection.execute(statement, [{"object_id": i, "added": added} for i, added in batch])
+    _record_provenance(
+        connection,
+        "object_id",
+        [(object_id, sorted(added)) for object_id, added in updates.items()],
+        run_id,
+        source_id,
+    )
+    return len(updates), invalid
 
 
 def search_text(

@@ -1,0 +1,22 @@
+# Correspondances entre vulnérabilités exploitées (KEV) et techniques ATT&CK, établies par le
+# Center for Threat-Informed Defense de MITRE.
+#
+# Limites à connaître : le fichier date de juillet 2025 et vise ATT&CK 16.1. Il ne couvre
+# qu'une partie du catalogue KEV, et certaines techniques ont été retirées depuis. Son adresse
+# contient sa date : une nouvelle édition demandera de mettre à jour « url » à la main.
+id: ctid-kev-attack
+name: Correspondances KEV → ATT&CK (MITRE CTID)
+version: "1"
+url: https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/kev/attack-16.1/kev-07.28.2025/enterprise/kev-07.28.2025_attack-16.1-enterprise.json
+homepage: https://ctid.mitre.org/mappings/
+domains:
+  - raw.githubusercontent.com
+licence: Apache-2.0
+licence_url: https://github.com/center-for-threat-informed-defense/mappings-explorer/blob/main/LICENSE.txt
+attribution: MITRE Center for Threat-Informed Defense, Mappings Explorer
+redistributable: true
+schedule_hours: 168
+# Ne crée aucun objet : relie des vulnérabilités et des techniques venues d'autres sources.
+after:
+  - cisa-kev
+  - mitre-attack

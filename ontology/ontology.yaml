@@ -2,9 +2,10 @@
 # La base, l'API et l'interface en découlent. Ajouter un type se fait ici, pas dans le code.
 #
 # Types de propriété : text, integer, number, boolean, date, datetime, url, enum, text_list.
+# « unit: percent » affiche un nombre entre 0 et 1 comme un pourcentage.
 # Règle éthique : aucun type ni propriété décrivant une personne (refusé au chargement).
 
-version: 1
+version: 2
 
 layers:
   territoire:
@@ -20,7 +21,7 @@ object_types:
     plural: Vulnérabilités
     layer: menace
     description: Faille de sécurité référencée par un identifiant CVE.
-    columns: [kev_date_added, ransomware_use, due_date]
+    columns: [kev_date_added, cvss_severity, epss_score, ransomware_use]
     default_sort: {by: kev_date_added, order: desc}
     properties:
       name:
@@ -41,6 +42,38 @@ object_types:
         values:
           known: Avéré
           unknown: Non connu
+      cvss_severity:
+        label: Gravité (CVSS)
+        type: enum
+        values:
+          critical: Critique
+          high: Élevée
+          medium: Moyenne
+          low: Faible
+          none: Nulle
+      cvss_score:
+        label: Score CVSS
+        type: number
+      cvss_version:
+        label: Version de CVSS
+        type: text
+      cvss_vector:
+        label: Vecteur CVSS
+        type: text
+      epss_score:
+        label: Probabilité d'exploitation (EPSS)
+        type: number
+        unit: percent
+      epss_percentile:
+        label: Rang EPSS parmi toutes les CVE
+        type: number
+        unit: percent
+      epss_date:
+        label: Date du score EPSS
+        type: date
+      published:
+        label: Publication
+        type: date
       required_action:
         label: Action requise
         type: text
@@ -85,6 +118,137 @@ object_types:
         required: true
         searchable: true
 
+  technique:
+    label: Technique
+    plural: Techniques
+    layer: menace
+    description: Façon de faire d'un attaquant, décrite par MITRE ATT&CK.
+    columns: [platforms]
+    default_sort: {by: key, order: asc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+      description:
+        label: Description
+        type: text
+        searchable: true
+      is_subtechnique:
+        label: Sous-technique
+        type: boolean
+      platforms:
+        label: Plateformes
+        type: text_list
+      url:
+        label: Fiche ATT&CK
+        type: url
+
+  tactic:
+    label: Tactique
+    plural: Tactiques
+    layer: menace
+    description: But poursuivi par un attaquant à une étape de son intrusion.
+    columns: []
+    default_sort: {by: key, order: asc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+      description:
+        label: Description
+        type: text
+        searchable: true
+      url:
+        label: Fiche ATT&CK
+        type: url
+
+  group:
+    label: Groupe
+    plural: Groupes
+    layer: menace
+    description: Groupe d'attaquants suivi sous un nom commun par les analystes.
+    columns: [aliases]
+    default_sort: {by: title, order: asc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+      description:
+        label: Description
+        type: text
+        searchable: true
+      aliases:
+        label: Autres noms
+        type: text_list
+        searchable: true
+      url:
+        label: Fiche ATT&CK
+        type: url
+
+  software:
+    label: Logiciel d'attaque
+    plural: Logiciels d'attaque
+    layer: menace
+    description: Logiciel malveillant ou outil employé lors d'intrusions.
+    columns: [kind, platforms]
+    default_sort: {by: title, order: asc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+      description:
+        label: Description
+        type: text
+        searchable: true
+      kind:
+        label: Nature
+        type: enum
+        values:
+          malware: Logiciel malveillant
+          tool: Outil détourné
+      aliases:
+        label: Autres noms
+        type: text_list
+        searchable: true
+      platforms:
+        label: Plateformes
+        type: text_list
+      url:
+        label: Fiche ATT&CK
+        type: url
+
+  alert:
+    label: Alerte CERT-FR
+    plural: Alertes CERT-FR
+    layer: menace
+    description: Alerte publiée par le CERT-FR sur une menace qui demande une action rapide.
+    columns: [published]
+    default_sort: {by: published, order: desc}
+    properties:
+      name:
+        label: Titre
+        type: text
+        required: true
+        searchable: true
+      description:
+        label: Résumé
+        type: text
+        searchable: true
+      published:
+        label: Publication
+        type: date
+      url:
+        label: Bulletin
+        type: url
+
 link_types:
   affects:
     label: affecte
@@ -96,3 +260,43 @@ link_types:
     inverse_label: édite
     from: product
     to: vendor
+  exploited_via:
+    label: s'exploite par
+    inverse_label: sert à exploiter
+    from: vulnerability
+    to: technique
+  enables:
+    label: permet ensuite
+    inverse_label: est permise par
+    from: vulnerability
+    to: technique
+  technique_in_tactic:
+    label: sert la tactique
+    inverse_label: regroupe
+    from: technique
+    to: tactic
+  subtechnique_of:
+    label: précise
+    inverse_label: se décline en
+    from: technique
+    to: technique
+  group_uses_technique:
+    label: emploie
+    inverse_label: est employée par
+    from: group
+    to: technique
+  group_uses_software:
+    label: utilise
+    inverse_label: est utilisé par
+    from: group
+    to: software
+  software_uses_technique:
+    label: met en œuvre
+    inverse_label: est mise en œuvre par
+    from: software
+    to: technique
+  alert_mentions:
+    label: mentionne
+    inverse_label: est mentionnée par
+    from: alert
+    to: vulnerability

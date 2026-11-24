@@ -547,10 +547,10 @@ td.identifier {
 
 .cable {
   display: grid;
-  grid-template-columns: minmax(8rem, 12rem) 1fr;
+  grid-template-columns: 4.5rem 1fr;
   gap: 0 0.75rem;
   align-items: start;
-  padding-block: 0.75rem;
+  padding-block: 0.6rem;
   border-bottom: 1px solid var(--trait);
 }
 
@@ -636,6 +636,136 @@ td.identifier {
   margin: 0;
 }
 
+/* Les liens d'une fiche sont regroupés par relation : « affecte », « est employée par »… */
+.sheet__graph {
+  margin-top: 0.9rem;
+}
+
+.relations {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.relations > li {
+  margin-top: 1.4rem;
+}
+
+.relation {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0;
+  font: italic 400 1rem/1.4 var(--texte);
+  color: var(--magenta);
+}
+
+.relation__count {
+  font-style: normal;
+  font-size: 0.85rem;
+  color: var(--encre-douce);
+}
+
+/* --- explorateur de graphe ---------------------------------------------------------------
+   Une couleur par type d'objet, tirée de la même palette de carte marine. La variable --node
+   sert à la fois au rond du graphe et à la pastille de la légende. */
+.node--vulnerability { --node: var(--terre); }
+.node--product { --node: var(--petits-fonds); }
+.node--vendor { --node: var(--grands-fonds); }
+.node--technique { --node: var(--magenta); }
+.node--tactic { --node: #e6b9cf; }
+.node--group { --node: var(--encre); }
+.node--software { --node: var(--estran); }
+.node--alert { --node: var(--terre-fort); }
+
+.graph {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+  gap: 2rem clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+  margin-top: 1.75rem;
+}
+
+.graph__canvas {
+  width: 100%;
+  height: auto;
+  max-height: 78vh;
+  background: var(--blanc);
+  border: 1px solid var(--trait);
+}
+
+.edge {
+  stroke: var(--magenta);
+  stroke-width: 1.2;
+  opacity: 0.5;
+}
+
+/* Une hypothèse n'est pas un fait : son trait est interrompu. */
+.edge--hypothesis {
+  stroke-dasharray: 5 5;
+}
+
+.node {
+  cursor: pointer;
+  outline: none;
+}
+
+.node circle {
+  fill: var(--node, var(--blanc));
+  stroke: var(--encre);
+  stroke-width: 1.5;
+}
+
+.node text {
+  font: 500 11px var(--titre);
+  text-anchor: middle;
+  fill: var(--encre);
+  /* liseré blanc : le libellé reste lisible par-dessus les traits */
+  paint-order: stroke;
+  stroke: var(--blanc);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.node--selected circle,
+.node:focus-visible circle {
+  stroke: var(--magenta);
+  stroke-width: 4;
+}
+
+.node--selected text {
+  font-weight: 600;
+}
+
+.graph__actions {
+  display: grid;
+  gap: 0.3rem;
+  margin-block: 1rem 1.5rem;
+  font-style: normal;
+}
+
+.legend {
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  font-style: normal;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-block: 0.15rem;
+}
+
+.legend__dot {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--encre);
+  background: var(--node, var(--blanc));
+}
+
 /* --- états ------------------------------------------------------------------------------ */
 
 .state {
@@ -656,7 +786,8 @@ td.identifier {
 /* --- petits écrans ---------------------------------------------------------------------- */
 
 @media (max-width: 56rem) {
-  .sheet {
+  .sheet,
+  .graph {
     grid-template-columns: minmax(0, 1fr);
   }
 }

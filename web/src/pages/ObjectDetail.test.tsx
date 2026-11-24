@@ -97,6 +97,7 @@ describe("object page", () => {
 
     const links = await screen.findByRole("region", { name: "Liens" });
     const item = (await within(links).findByText("affecte")).closest("li")!;
+    expect(within(item).getByText("1")).toBeVisible(); // nombre de liens de cette relation
     expect(within(item).getByRole("link", { name: "DiskStation Manager (DSM)" })).toHaveAttribute(
       "href",
       "/objets/product/synology%3Adiskstation-manager-dsm",

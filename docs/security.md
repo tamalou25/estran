@@ -100,7 +100,14 @@ docker compose logs proxy
 ```
 
 Le client HTTP du collecteur applique la même règle côté application : deux barrières
-indépendantes pour la même garantie.
+indépendantes pour la même garantie. Il ne suit une redirection que vers un hôte déclaré, en
+HTTPS, et trois fois au plus.
+
+Hôtes ouverts à ce jour : `www.cisa.gov`, `services.nvd.nist.gov`,
+`epss.empiricalsecurity.com`, `www.cert.cyber.gouv.fr` et `raw.githubusercontent.com`.
+Ce dernier est **large** : il sert le contenu de tous les dépôts publics de GitHub, pas
+seulement ceux de MITRE. Le proxy ne voyant que le nom d'hôte, un collecteur compromis
+pourrait y lire n'importe quel fichier public (mais pas y écrire).
 
 ## Les mots de passe
 

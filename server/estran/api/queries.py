@@ -116,10 +116,17 @@ def get_neighbors(
         text(f"SELECT count(*) FROM ({_NEIGHBORS}) AS neighbors"),
         params,
     ).scalar_one()
+    # Balanced order: the first neighbour of every relation, then the second of each, and so
+    # on. A short list (graph, capped page) then shows every kind of relation instead of
+    # only the one that happens to sort first.
     rows = connection.execute(
         text(
-            f"SELECT * FROM ({_NEIGHBORS}) AS neighbors "
-            "ORDER BY link_type, direction, title, key LIMIT :limit OFFSET :offset"
+            "SELECT link_type, direction, nature, type, key, title FROM ("
+            "  SELECT neighbors.*, row_number() OVER ("
+            "    PARTITION BY link_type, direction ORDER BY title, key"
+            f"  ) AS position FROM ({_NEIGHBORS}) AS neighbors"
+            ") AS ranked "
+            "ORDER BY position, link_type, direction LIMIT :limit OFFSET :offset"
         ),
         {**params, "limit": limit, "offset": offset},
     ).mappings()

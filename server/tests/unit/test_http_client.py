@@ -72,11 +72,11 @@ def test_host_outside_the_declared_domains_is_refused_before_any_request(url):
         client_answering(never_called).get(url)
 
 
-def test_redirect_is_not_followed():
+def test_redirect_towards_an_undeclared_host_is_not_followed():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(302, headers={"Location": "https://evil.example.com/"})
 
-    with pytest.raises(HttpError, match="302"):
+    with pytest.raises(HttpError, match="not declared"):
         client_answering(handler).get("https://data.example.org/feed.json")
 
 

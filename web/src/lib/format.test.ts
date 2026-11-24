@@ -58,6 +58,13 @@ describe("displayValue", () => {
     expect(displayValue(property({ type: "boolean" }), false)).toBe("Non");
   });
 
+  it("shows a probability as a percentage", () => {
+    const prop = property({ type: "number", unit: "percent" });
+    expect(displayValue(prop, 0.99994)).toMatch(/^99,99\s%$/);
+    expect(displayValue(prop, 0.0835)).toMatch(/^8,35\s%$/);
+    expect(displayValue(property({ type: "number" }), 7.5)).toBe("7,5");
+  });
+
   it("joins lists", () => {
     expect(displayValue(property({ type: "text_list" }), ["CWE-73", "CWE-94"])).toBe(
       "CWE-73, CWE-94",

@@ -115,7 +115,8 @@ services:
     tmpfs:
       - /tmp
     networks: [data, collect]
-    mem_limit: 512m
+    # Le référentiel ATT&CK (55 Mo de JSON) demande plus de mémoire à l'analyse.
+    mem_limit: 1g
     depends_on:
       migrate:
         condition: service_completed_successfully

@@ -7,6 +7,7 @@ tested on a recorded sample.
 
 import inspect
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar, Literal, Self
@@ -40,6 +41,11 @@ class Manifest(BaseModel):
     redistributable: bool
     schedule_hours: int = Field(ge=1)
     snapshot: str | None = None  # file name in the snapshot directory; redistributable only
+    max_megabytes: int = Field(default=50, ge=1, le=500)  # largest document accepted
+    # Sources this one builds on: it is run again, in full, whenever one of them changes.
+    after: list[str] = Field(default_factory=list)
+    # Object types this source adds fields to without ever creating them.
+    enriches: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _snapshot_needs_a_redistributable_source(self) -> Self:
@@ -65,10 +71,22 @@ class LinkRecord:
     nature: Literal["fact", "hypothesis"] = "fact"
 
 
+@dataclass(frozen=True, slots=True)
+class EnrichmentRecord:
+    """Fields added to an object that another source created. Ignored if it does not exist."""
+
+    type: str
+    key: str
+    properties: dict[str, Any]
+
+
 @dataclass(slots=True)
 class Translation:
     objects: list[ObjectRecord] = field(default_factory=list)
     links: list[LinkRecord] = field(default_factory=list)
+    # May be a generator: a source scoring every CVE in the world yields hundreds of
+    # thousands of records, of which only those matching known objects are kept.
+    enrichments: Iterable[EnrichmentRecord] = ()
     skipped: int = 0
 
 

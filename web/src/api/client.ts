@@ -78,8 +78,13 @@ export function useObject(type: string, key: string) {
 export function useNeighbors(type: string, key: string) {
   return useQuery({
     queryKey: ["neighbors", type, key],
-    queryFn: () => getJson<Neighbors>(`${objectApiPath(type, key)}/neighbors`),
+    queryFn: () => getJson<Neighbors>(`${objectApiPath(type, key)}/neighbors?limit=200`),
   });
+}
+
+/** Voisins d'un objet, hors du cache : l'explorateur de graphe les demande à la volée. */
+export function fetchNeighbors(type: string, key: string, limit: number): Promise<Neighbors> {
+  return getJson<Neighbors>(`${objectApiPath(type, key)}/neighbors?limit=${limit}`);
 }
 
 export function useStats() {

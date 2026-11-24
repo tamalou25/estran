@@ -39,7 +39,9 @@ class KevConnector(Connector):
                 objects.setdefault((record.type, record.key), record)
             for link in entry_links:
                 links.setdefault((link.type, link.source[1], link.target[1]), link)
-        return Translation(list(objects.values()), list(links.values()), skipped)
+        return Translation(
+            objects=list(objects.values()), links=list(links.values()), skipped=skipped
+        )
 
 
 def _translate_entry(entry: Any) -> tuple[list[ObjectRecord], list[LinkRecord]]:

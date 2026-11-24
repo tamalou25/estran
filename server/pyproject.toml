@@ -5,6 +5,7 @@ description = "Estran : ontologie, collecte et API"
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.20",
+    "defusedxml>=0.7",
     "fastapi>=0.165",
     "httpx>=0.28",
     "psycopg[binary]>=3.3",
@@ -21,6 +22,7 @@ dev = [
     "mypy>=1.18",
     "pytest>=8.4",
     "ruff>=0.14",
+    "types-defusedxml>=0.7.0.20260504",
     "types-pyyaml>=6.0",
 ]
 
@@ -44,7 +46,7 @@ select = ["E", "F", "I", "UP", "B", "S", "SIM"]
 ignore = ["S101"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S"]
+"tests/*" = ["S", "E501"]
 # SQL text there is built from fixed fragments only; every value is a bound parameter.
 "estran/api/queries.py" = ["S608"]
 

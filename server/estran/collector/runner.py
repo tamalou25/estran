@@ -14,7 +14,7 @@ from sqlalchemy import Engine, func, select, update
 from sqlalchemy.dialects.postgresql import Insert, insert
 
 from estran.collector.http import HttpClient, HttpError
-from estran.collector.loader import load
+from estran.collector.loader import enrich, load
 from estran.collector.sdk import Connector, ConnectorError, LinkRecord, Manifest, ObjectRecord
 from estran.db.tables import runs, sources
 from estran.ontology import Ontology, RecordError, validate_link, validate_object
@@ -59,7 +59,10 @@ def run_connector(
     mode: Mode,
     snapshot_dir: Path,
     client: HttpClient | None = None,
+    force: bool = False,
 ) -> RunResult:
+    """`force` reloads the document even if it has not changed: needed when the objects it
+    builds on have changed since (see `after` in the manifest)."""
     manifest = connector.manifest
     with engine.begin() as connection:
         connection.execute(_upsert_source(manifest))
@@ -82,7 +85,9 @@ def run_connector(
         ).scalar_one()
 
     try:
-        return _run(engine, ontology, connector, run_id, mode, snapshot_dir, client, previous)
+        return _run(
+            engine, ontology, connector, run_id, mode, snapshot_dir, client, previous, force
+        )
     except (HttpError, ConnectorError, OSError) as error:
         return _fail(engine, run_id, manifest, str(error))
     except Exception as error:
@@ -99,9 +104,10 @@ def _run(
     snapshot_dir: Path,
     client: HttpClient | None,
     previous: _Previous | None,
+    force: bool,
 ) -> RunResult:
     manifest = connector.manifest
-    document = _obtain(connector, mode, snapshot_dir, client, previous)
+    document = _obtain(connector, mode, snapshot_dir, client, previous, force)
     sha256 = hashlib.sha256(document.raw).hexdigest() if document.raw is not None else None
     finished = {
         "mode": document.mode,
@@ -110,7 +116,8 @@ def _run(
         "error": document.note,
     }
 
-    if document.raw is None or (previous and sha256 == previous.content_sha256):
+    same_content = previous is not None and sha256 == previous.content_sha256
+    if document.raw is None or (same_content and not force):
         with engine.begin() as connection:
             connection.execute(
                 update(runs)
@@ -137,13 +144,28 @@ def _run(
             object_records=valid_objects,
             link_records=valid_links,
         )
-        skipped = translation.skipped + invalid_objects + invalid_links + counts.unresolved_links
+        enriched, invalid_enrichments = enrich(
+            connection,
+            ontology,
+            run_id=run_id,
+            source_id=manifest.id,
+            types=manifest.enriches,
+            records=translation.enrichments,
+        )
+        objects_count = counts.objects + enriched
+        skipped = (
+            translation.skipped
+            + invalid_objects
+            + invalid_links
+            + invalid_enrichments
+            + counts.unresolved_links
+        )
         connection.execute(
             update(runs)
             .where(runs.c.id == run_id)
             .values(
                 status="success",
-                objects_count=counts.objects,
+                objects_count=objects_count,
                 links_count=counts.links,
                 skipped_count=skipped,
                 content_sha256=sha256,
@@ -153,12 +175,12 @@ def _run(
     logger.info(
         "%s: %d objects, %d links, %d skipped (%s)",
         manifest.id,
-        counts.objects,
+        objects_count,
         counts.links,
         skipped,
         document.mode,
     )
-    return RunResult(run_id, "success", counts.objects, counts.links, skipped, document.note)
+    return RunResult(run_id, "success", objects_count, counts.links, skipped, document.note)
 
 
 def _obtain(
@@ -167,15 +189,18 @@ def _obtain(
     snapshot_dir: Path,
     client: HttpClient | None,
     previous: _Previous | None,
+    force: bool,
 ) -> _Document:
     manifest = connector.manifest
     if mode == "snapshot":
         return _Document(_read_snapshot(manifest, snapshot_dir), "snapshot", None)
 
     own_client = client is None
-    http = client or HttpClient(manifest.domains)
+    http = client or HttpClient(manifest.domains, max_bytes=manifest.max_megabytes * 1024 * 1024)
+    # A forced run does not send the known ETag: it wants the document, changed or not.
+    etag = previous.etag if previous and not force else None
     try:
-        result = connector.fetch(http, previous.etag if previous else None)
+        result = connector.fetch(http, etag)
     except HttpError as error:
         # Very first collection and the source is unreachable: start from the bundled
         # snapshot so the platform is usable offline. Later failures are just failures.

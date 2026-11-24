@@ -1,0 +1,21 @@
+# National Vulnerability Database (NIST) : gravité CVSS et date de publication, pour les
+# seules vulnérabilités du catalogue KEV. Le paramètre « hasKev » évite une requête par CVE.
+id: nist-nvd
+name: NIST National Vulnerability Database
+version: "1"
+url: https://services.nvd.nist.gov/rest/json/cves/2.0?hasKev
+homepage: https://nvd.nist.gov/
+domains:
+  - services.nvd.nist.gov
+licence: Domaine public (NIST), conditions d'usage de l'API
+licence_url: https://nvd.nist.gov/developers/terms-of-use
+# Mention que les conditions d'usage demandent d'afficher.
+attribution: "NIST NVD. This product uses the NVD API but is not endorsed or certified by the NVD."
+# Données publiques, mais aucun instantané n'est embarqué (20 Mo, périmé en quelques jours).
+redistributable: true
+schedule_hours: 24
+max_megabytes: 100
+after:
+  - cisa-kev
+enriches:
+  - vulnerability

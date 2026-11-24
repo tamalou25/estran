@@ -1,0 +1,17 @@
+# Alertes du CERT-FR (ANSSI) : menaces qui demandent une action rapide.
+# Seul le flux des alertes est collecté : il cite les identifiants CVE, pas celui des avis.
+id: cert-fr-alertes
+name: CERT-FR — alertes de sécurité
+version: "1"
+url: https://www.cert.cyber.gouv.fr/alerte/feed/
+homepage: https://www.cert.cyber.gouv.fr/alerte/
+domains:
+  - www.cert.cyber.gouv.fr
+licence: Licence Ouverte 2.0 (Etalab)
+licence_url: https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+attribution: CERT-FR, Agence nationale de la sécurité des systèmes d'information (ANSSI)
+redistributable: true
+schedule_hours: 6
+# Les alertes sont reliées aux vulnérabilités déjà connues d'Estran.
+after:
+  - cisa-kev

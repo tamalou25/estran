@@ -24,6 +24,7 @@ class PropertyType(_Model):
     required: bool = False
     searchable: bool = False
     values: dict[str, str] | None = None  # enum only: stored value -> displayed label
+    unit: Literal["percent"] | None = None  # number only: 0.25 is shown as 25 %
 
 
 class SortSpec(_Model):

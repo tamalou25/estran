@@ -4,6 +4,7 @@ import { isNotFound, objectPath, useNeighbors, useObject, useOntology } from "..
 import type { Neighbor, Ontology } from "../api/types";
 import { PropertyValue } from "../components/PropertyValue";
 import { ProvenanceNote } from "../components/ProvenanceNote";
+import { graphPath } from "./Graph";
 import { Failure, Loading, Notice } from "../components/States";
 import { formatDateTime } from "../lib/format";
 
@@ -74,13 +75,26 @@ export function ObjectDetail() {
           )}
           {neighbors.data && neighbors.data.items.length > 0 && (
             <>
-              <ul className="cables">
-                {neighbors.data.items.map((neighbor) => (
-                  <NeighborItem
-                    key={`${neighbor.link_type}-${neighbor.direction}-${neighbor.object.type}-${neighbor.object.key}`}
-                    neighbor={neighbor}
-                    ontology={ontology.data}
-                  />
+              <p className="sheet__graph">
+                <Link to={graphPath(type, key)}>Explorer le graphe</Link>
+              </p>
+              <ul className="relations">
+                {groupByRelation(neighbors.data.items, ontology.data).map((group) => (
+                  <li key={group.label}>
+                    <h3 className="relation">
+                      <span className="relation__label">{group.label}</span>
+                      <span className="relation__count">{group.items.length}</span>
+                    </h3>
+                    <ul className="cables">
+                      {group.items.map((neighbor) => (
+                        <NeighborItem
+                          key={`${neighbor.link_type}-${neighbor.direction}-${neighbor.object.type}-${neighbor.object.key}`}
+                          neighbor={neighbor}
+                          ontology={ontology.data}
+                        />
+                      ))}
+                    </ul>
+                  </li>
                 ))}
               </ul>
               {neighbors.data.total > neighbors.data.items.length && (
@@ -100,17 +114,29 @@ export function ObjectDetail() {
   );
 }
 
-function NeighborItem({ neighbor, ontology }: { neighbor: Neighbor; ontology: Ontology }) {
+function relationLabel(neighbor: Neighbor, ontology: Ontology): string {
   const linkType = ontology.link_types[neighbor.link_type];
-  const relation =
-    neighbor.direction === "out"
-      ? (linkType?.label ?? neighbor.link_type)
-      : (linkType?.inverse_label ?? neighbor.link_type);
+  return neighbor.direction === "out"
+    ? (linkType?.label ?? neighbor.link_type)
+    : (linkType?.inverse_label ?? neighbor.link_type);
+}
+
+/** « affecte », « est mentionnée par »… : un groupe par relation, dans l'ordre de l'API. */
+function groupByRelation(items: Neighbor[], ontology: Ontology) {
+  const groups = new Map<string, Neighbor[]>();
+  for (const item of items) {
+    const label = relationLabel(item, ontology);
+    groups.set(label, [...(groups.get(label) ?? []), item]);
+  }
+  return [...groups].map(([label, grouped]) => ({ label, items: grouped }));
+}
+
+function NeighborItem({ neighbor, ontology }: { neighbor: Neighbor; ontology: Ontology }) {
   const targetType = ontology.object_types[neighbor.object.type];
 
   return (
     <li className={neighbor.nature === "hypothesis" ? "cable cable--hypothesis" : "cable"}>
-      <span className="cable__relation">{relation}</span>
+      <span className="cable__relation" aria-hidden="true" />
       <span className="cable__target">
         <Link to={objectPath(neighbor.object.type, neighbor.object.key)}>
           {neighbor.object.title}

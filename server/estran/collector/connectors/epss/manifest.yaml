@@ -1,0 +1,21 @@
+# EPSS (Exploit Prediction Scoring System, FIRST) : probabilité qu'une vulnérabilité soit
+# exploitée dans les 30 jours. Un fichier par jour, pour toutes les CVE publiées.
+id: first-epss
+name: FIRST EPSS
+version: "1"
+# Redirige vers le fichier du jour, sur le même hôte.
+url: https://epss.empiricalsecurity.com/epss_scores-current.csv.gz
+homepage: https://www.first.org/epss/
+domains:
+  - epss.empiricalsecurity.com
+# FIRST publie les scores « freely and openly », sans licence explicite : Estran les collecte
+# et les affiche, mais ne les redistribue pas.
+licence: Accès libre, sans licence explicite
+licence_url: https://www.first.org/epss/
+attribution: FIRST EPSS, scores produits par Empirical Security
+redistributable: false
+schedule_hours: 24
+after:
+  - cisa-kev
+enriches:
+  - vulnerability

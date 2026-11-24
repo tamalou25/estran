@@ -57,6 +57,8 @@ def _check_consistency(ontology: Ontology) -> None:
             _check_identifier(property_id)
             if property_id in BUILTIN_SORT_KEYS:
                 raise OntologyError(f"'{type_id}.{property_id}' shadows a built-in column")
+            if prop.unit and prop.type != "number":
+                raise OntologyError(f"'{type_id}.{property_id}': 'unit' is only for numbers")
             if (prop.type == "enum") != bool(prop.values):
                 raise OntologyError(
                     f"'{type_id}.{property_id}': 'values' is required for enum and only for enum"

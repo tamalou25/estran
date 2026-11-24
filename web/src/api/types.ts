@@ -17,6 +17,7 @@ export interface PropertyType {
   required: boolean;
   searchable: boolean;
   values: Record<string, string> | null;
+  unit?: "percent" | null;
 }
 
 export interface ObjectType {

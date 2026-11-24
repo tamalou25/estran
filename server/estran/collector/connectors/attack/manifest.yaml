@@ -1,0 +1,17 @@
+# MITRE ATT&CK (Enterprise) : techniques, tactiques, groupes et logiciels d'attaque.
+id: mitre-attack
+name: MITRE ATT&CK
+version: "1"
+url: https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json
+homepage: https://attack.mitre.org/
+domains:
+  - raw.githubusercontent.com
+licence: Licence ATT&CK (MITRE)
+licence_url: https://attack.mitre.org/resources/legal-and-branding/terms-of-use/
+# Mention exigée par la licence pour toute copie.
+attribution: "© 2026 The MITRE Corporation. This work is reproduced and distributed with the permission of The MITRE Corporation."
+redistributable: true
+# Le référentiel change deux fois par an environ ; la requête est conditionnelle (ETag).
+schedule_hours: 24
+# Le fichier pèse environ 55 Mo : trop gros pour un instantané embarqué.
+max_megabytes: 120

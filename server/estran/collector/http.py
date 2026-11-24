@@ -2,7 +2,7 @@
 
 import zlib
 from dataclasses import dataclass
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 import httpx
 
@@ -11,6 +11,8 @@ from estran import __version__
 USER_AGENT = f"Estran/{__version__} (open-data collector)"
 DEFAULT_MAX_BYTES = 50 * 1024 * 1024
 DEFAULT_TIMEOUT_SECONDS = 30.0
+MAX_REDIRECTS = 3
+REDIRECT_CODES = (301, 302, 303, 307, 308)
 
 
 class HttpError(Exception):
@@ -53,18 +55,25 @@ class HttpClient:
         self._client.close()
 
     def get(self, url: str, *, etag: str | None = None) -> FetchResult:
-        self._check_allowed(url)
         headers = {"If-None-Match": etag} if etag else {}
-        try:
-            with self._client.stream("GET", url, headers=headers) as response:
-                if response.status_code == httpx.codes.NOT_MODIFIED:
-                    return FetchResult(content=None, etag=etag, not_modified=True)
-                if response.status_code != httpx.codes.OK:
-                    raise HttpError(f"{url} answered HTTP {response.status_code}")
-                content = self._read_bounded(url, response)
-                return FetchResult(content=content, etag=response.headers.get("ETag"))
-        except httpx.HTTPError as error:
-            raise HttpError(f"{url} could not be fetched: {error}") from error
+        # A redirect is followed by hand, so that every hop goes through the same check as
+        # the first address: https, and a host the connector declared.
+        for _ in range(MAX_REDIRECTS + 1):
+            self._check_allowed(url)
+            try:
+                with self._client.stream("GET", url, headers=headers) as response:
+                    if response.status_code == httpx.codes.NOT_MODIFIED:
+                        return FetchResult(content=None, etag=etag, not_modified=True)
+                    if response.status_code in REDIRECT_CODES:
+                        url = urljoin(url, response.headers.get("Location", ""))
+                        continue
+                    if response.status_code != httpx.codes.OK:
+                        raise HttpError(f"{url} answered HTTP {response.status_code}")
+                    content = self._read_bounded(url, response)
+                    return FetchResult(content=content, etag=response.headers.get("ETag"))
+            except httpx.HTTPError as error:
+                raise HttpError(f"{url} could not be fetched: {error}") from error
+        raise HttpError(f"{url}: more than {MAX_REDIRECTS} redirects")
 
     def _check_allowed(self, url: str) -> None:
         parts = urlsplit(url)

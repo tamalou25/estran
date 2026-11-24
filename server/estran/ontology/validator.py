@@ -13,6 +13,20 @@ class RecordError(ValueError):
 
 def validate_object(ontology: Ontology, type_id: str, properties: dict[str, Any]) -> dict[str, Any]:
     """Return the properties normalized, or raise RecordError. Empty values are dropped."""
+    normalized = validate_properties(ontology, type_id, properties)
+    for name, prop in ontology.object_types[type_id].properties.items():
+        if prop.required and name not in normalized:
+            raise RecordError(f"'{type_id}' is missing required property '{name}'")
+    return normalized
+
+
+def validate_properties(
+    ontology: Ontology, type_id: str, properties: dict[str, Any]
+) -> dict[str, Any]:
+    """Check and normalize some properties of an object, without requiring all of them.
+
+    Used when a source adds fields to an object another source created.
+    """
     object_type = ontology.object_types.get(type_id)
     if object_type is None:
         raise RecordError(f"unknown object type '{type_id}'")
@@ -31,10 +45,6 @@ def validate_object(ontology: Ontology, type_id: str, properties: dict[str, Any]
         if clean in ("", []):
             continue
         normalized[name] = clean
-
-    for name, prop in object_type.properties.items():
-        if prop.required and name not in normalized:
-            raise RecordError(f"'{type_id}' is missing required property '{name}'")
     return normalized
 
 

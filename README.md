@@ -7,9 +7,10 @@ sous-marins sortent de l'eau. Estran est une plateforme locale qui branche des s
 données ouvertes et en fait **un seul monde d'objets reliés entre eux**, où chaque information
 garde la trace de sa source et de sa licence.
 
-> État : **phases 0a et 0b** (socle fonctionnel, puis durci). Une source branchée, le catalogue
-> CISA KEV des vulnérabilités dont l'exploitation est avérée. La
-> [feuille de route](#feuille-de-route) dit ce qui vient ensuite.
+> État : **phase 1a** (couche Menace). Six sources ouvertes branchées : failles exploitées
+> (CISA KEV), gravité (NVD) et probabilité d'exploitation (EPSS), techniques et groupes
+> d'attaquants (MITRE ATT&CK), alertes du CERT-FR. La [feuille de route](#feuille-de-route)
+> dit ce qui vient ensuite.
 
 ## Démarrage
 
@@ -39,10 +40,20 @@ ceux de la base sont générés au premier démarrage.
 
 - **Accueil** — les trois couches de l'ontologie (Territoire, Infrastructure, Menace). Celles
   qui n'ont pas encore de données sont « sous l'eau ».
-- **Listes** — vulnérabilités, produits, éditeurs : recherche, tri, filtre.
-- **Fiche d'un objet** — ses propriétés, ses liens vers d'autres objets, et en marge sa
-  **provenance** : quelle source, quelle licence, relevée quand.
+- **Listes** — vulnérabilités, produits, éditeurs, techniques, tactiques, groupes, logiciels
+  d'attaque, alertes : recherche, tri (par probabilité d'exploitation, par gravité…), filtres.
+- **Fiche d'un objet** — ses propriétés, ses liens regroupés par relation, et en marge sa
+  **provenance** : quelles sources ont fourni quels champs, sous quelle licence, quand.
+- **Graphe** — partir d'un objet et ouvrir ses voisins de proche en proche.
 - **Sources** — l'état de chaque collecte.
+
+### Le fil « de la faille au terrain »
+
+Ouvrir une vulnérabilité, par exemple
+<http://127.0.0.1:8080/graphe/vulnerability/CVE-2024-34102>, puis suivre :
+la faille **s'exploite par** une technique → cette technique **est employée par** des groupes
+→ ces groupes **utilisent** des logiciels. Plusieurs sources se rejoignent sur un même objet,
+chacune visible dans sa provenance.
 
 ## Les idées derrière
 
@@ -52,7 +63,9 @@ les colonnes d'une liste, les libellés, les filtres ne sont écrits nulle part 
 
 **Brancher une source, c'est la traduire.** Un connecteur est un dossier : un `manifest.yaml`
 (adresse, licence, cadence) et une fonction `translate` qui transforme le document brut en
-objets et en liens. Tout ce qui ne respecte pas l'ontologie est refusé avant la base.
+objets et en liens. Tout ce qui ne respecte pas l'ontologie est refusé avant la base. Une
+source peut aussi **enrichir** des objets créés par une autre (un score, une gravité) ou
+n'apporter que des **liens** entre eux.
 
 **La provenance n'est pas une option.** Chaque objet et chaque lien sait quelle source l'a
 fourni et quand. Un lien porte aussi sa *nature* — fait ou hypothèse — pour ne jamais présenter
@@ -110,7 +123,8 @@ Modèle de menaces et **limites assumées** : [`docs/security.md`](docs/security
 |---|---|---|
 | fait | 0a — Socle | Ontologie, base, connecteur KEV, API, interface |
 | fait | 0b — Durcissement | Réseaux cloisonnés, proxy sortant à liste blanche, conteneurs en lecture seule, scans |
-| | 1 — Couche Menace | CVE, EPSS, MITRE ATT&CK, CERT-FR, abuse.ch ; explorateur de graphe |
+| fait | 1a — Couche Menace | NVD, EPSS, MITRE ATT&CK, correspondances faille → technique, CERT-FR ; explorateur de graphe |
+| | 1b — Infrastructure d'attaque | abuse.ch (avec clé) et iptoasn : logiciel malveillant → réseau → pays |
 | | 2 — Mon parc | Croiser l'inventaire d'un lab avec les vulnérabilités exploitées |
 | | Bonus | Territoire et Infrastructure (carte, câbles, pannes), enquêtes, assistant local |
 
@@ -119,7 +133,10 @@ Modèle de menaces et **limites assumées** : [`docs/security.md`](docs/security
 - Pas d'authentification ni de TLS : acceptable sur une seule machine avec des données publiques, à revoir ensuite.
 - Sous Docker Desktop, le conteneur `web` garde une sortie vers Internet (voir `docs/security.md`).
 - La CI n'a pas encore tourné : le dépôt n'est pas publié.
-- Une seule source : les objets ne sont reliés qu'entre vulnérabilités, produits et éditeurs.
+- Les correspondances faille → technique datent de juillet 2025 et ne couvrent qu'environ un
+  quart du catalogue KEV ; les autres failles n'ont pas de lien vers une technique.
+- Hors-ligne, seul le catalogue KEV est disponible (les autres sources ne sont pas embarquées).
+- Seules les alertes du CERT-FR sont collectées, pas ses avis.
 - Deux produits dont les noms ne diffèrent que par la ponctuation sont fusionnés.
 
 ## Licence

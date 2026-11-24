@@ -46,6 +46,23 @@ sequenceDiagram
 Si le contenu est identique à la collecte précédente (même empreinte SHA-256, ou réponse
 `304`), rien n'est réécrit : la collecte est notée « inchangée ».
 
+### Trois façons de contribuer
+
+| Une source peut… | Exemple | Si l'objet visé n'existe pas |
+|---|---|---|
+| créer des objets et des liens | CISA KEV, MITRE ATT&CK | — |
+| **enrichir** des objets existants | NVD (gravité), EPSS (probabilité) | l'enregistrement est ignoré, sans erreur |
+| n'apporter que des **liens** | correspondances faille → technique | le lien est écarté et compté |
+
+Une source qui s'appuie sur une autre le déclare (`after` dans son manifeste) : quand la
+première change, la seconde est relancée et réappliquée en entier, même si son propre fichier
+n'a pas bougé. Sans cela, une faille ajoutée au catalogue attendrait son score jusqu'à la
+prochaine évolution du fichier des scores.
+
+Les voisins d'un objet sont renvoyés dans un ordre équilibré (le premier de chaque relation,
+puis le deuxième de chacune…) : une liste courte montre ainsi toutes les relations, au lieu
+des seules premières par ordre alphabétique.
+
 ## Le modèle de données
 
 Cinq tables, quelle que soit la richesse de l'ontologie :

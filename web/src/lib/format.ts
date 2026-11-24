@@ -10,6 +10,7 @@ const dayFormat = new Intl.DateTimeFormat("fr-FR", {
 });
 
 const countFormat = new Intl.NumberFormat("fr-FR");
+const percentFormat = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionDigits: 2 });
 
 /** Date de calendrier (AAAA-MM-JJ) : affichée telle quelle, sans décalage de fuseau. */
 export function formatDate(value: string): string {
@@ -54,7 +55,8 @@ export function displayValue(property: PropertyType, value: unknown): string {
       return value ? "Oui" : "Non";
     case "integer":
     case "number":
-      return typeof value === "number" ? countFormat.format(value) : String(value);
+      if (typeof value !== "number") return String(value);
+      return property.unit === "percent" ? percentFormat.format(value) : countFormat.format(value);
     case "text_list":
       return Array.isArray(value) ? value.join(", ") : String(value);
     default:
