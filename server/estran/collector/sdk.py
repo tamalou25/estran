@@ -100,6 +100,10 @@ class Connector(ABC):
         path = Path(inspect.getfile(cls)).parent / "manifest.yaml"
         cls.manifest = Manifest.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
 
+    def is_configured(self) -> bool:
+        """False for an optional source whose credential is missing: it is then left alone."""
+        return True
+
     def fetch(self, client: HttpClient, etag: str | None) -> FetchResult:
         """Download the raw document. Override for sources needing more than one GET."""
         return client.get(self.manifest.url, etag=etag)

@@ -75,6 +75,22 @@ class HttpClient:
                 raise HttpError(f"{url} could not be fetched: {error}") from error
         raise HttpError(f"{url}: more than {MAX_REDIRECTS} redirects")
 
+    def post_json(
+        self, url: str, payload: dict[str, object], *, headers: dict[str, str] | None = None
+    ) -> bytes:
+        """POST a JSON body. Same rules as `get`; a redirect is an error, never followed.
+
+        `headers` may carry a credential: nothing from them ever goes into an error message.
+        """
+        self._check_allowed(url)
+        try:
+            with self._client.stream("POST", url, json=payload, headers=headers or {}) as response:
+                if response.status_code != httpx.codes.OK:
+                    raise HttpError(f"{url} answered HTTP {response.status_code}")
+                return self._read_bounded(url, response)
+        except httpx.HTTPError as error:
+            raise HttpError(f"{url} could not be fetched: {type(error).__name__}") from error
+
     def _check_allowed(self, url: str) -> None:
         parts = urlsplit(url)
         if parts.scheme != "https":

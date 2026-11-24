@@ -1,0 +1,21 @@
+# abuse.ch ThreatFox : indicateurs récents de logiciels malveillants, ramenés à des comptes
+# par famille et par réseau grâce à la table iptoasn (domaine public, PDDL 1.0).
+#
+# Source OPTIONNELLE, inactive sans clé (voir secrets/README.md). Conditions lues le
+# 24/11/2026 : usage non lucratif seulement, volume raisonnable, pas de redistribution, pas
+# d'entraînement de modèle d'IA. Un usage commercial exige un abonnement.
+id: abusech-threatfox
+name: abuse.ch ThreatFox (agrégé par réseau)
+version: "1"
+url: https://threatfox-api.abuse.ch/api/v1/
+homepage: https://threatfox.abuse.ch/
+domains:
+  - threatfox-api.abuse.ch
+  - iptoasn.com
+licence: Conditions d'usage abuse.ch (non lucratif)
+licence_url: https://abuse.ch/terms-of-use/
+attribution: abuse.ch ThreatFox ; localisation des réseaux par iptoasn.com
+redistributable: false
+# L'API sert les 7 derniers jours : une requête par jour suffit largement.
+schedule_hours: 24
+max_megabytes: 120

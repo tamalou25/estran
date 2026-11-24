@@ -105,7 +105,11 @@ services:
       ESTRAN_DATABASE_USER: estran_collector
       ESTRAN_MODE: ${ESTRAN_MODE:-live}
       HTTPS_PROXY: http://proxy:3128
+      # Source optionnelle abuse.ch : inactive tant que ce fichier n'existe pas.
+      ESTRAN_ABUSECH_KEY_FILE: /run/secrets/user/abusech_auth_key
     volumes:
+      # Clés fournies par l'utilisateur (dossier ignoré par git), en lecture seule.
+      - ./secrets:/run/secrets/user:ro
       - type: volume
         source: secrets
         target: /run/secrets/estran

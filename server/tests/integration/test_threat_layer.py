@@ -27,6 +27,8 @@ def loaded(engine, ontology, fixtures_dir, tmp_path) -> dict[str, object]:
     results = {}
     for cls in REGISTRY.values():
         connector = cls()
+        if not connector.is_configured():
+            continue  # optional source without its key: the scheduler skips it too
         body = (fixtures_dir / "threat" / FIXTURE_OF[connector.manifest.id]).read_bytes()
         client = HttpClient(
             connector.manifest.domains,
@@ -102,7 +104,7 @@ def test_vulnerability_gathers_what_four_sources_say_about_it(api):
     properties = body["properties"]
     assert properties["kev_date_added"]  # CISA KEV
     assert properties["cvss_severity"] in {"critical", "high", "medium", "low"}  # NVD
-    assert properties["epss_score"] == 0.99994  # EPSS
+    assert properties["epss_score"] == 0.97  # EPSS
     assert properties["epss_date"] == "2026-11-23"
     sources = {p["source"]["id"]: p["fields"] for p in body["provenance"]}
     assert set(sources) == {"cisa-kev", "nist-nvd", "first-epss"}

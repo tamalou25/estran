@@ -138,6 +138,7 @@ def get_neighbors(
                 link_type=n["link_type"],
                 direction=n["direction"],
                 nature=n["nature"],
+                properties=n["properties"],
                 object=schemas.ObjectRef(type=n["type"], key=n["key"], title=n["title"]),
             )
             for n in rows

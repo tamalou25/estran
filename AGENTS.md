@@ -15,6 +15,8 @@ Thèse : *Internet est un territoire* (couches Territoire, Infrastructure, Menac
 - Test écrit avant le code. `translate()` d'un connecteur est une fonction pure, testée sur un extrait enregistré : aucun appel réseau dans les tests.
 - Ajouter une source = un dossier `server/estran/collector/connectors/<id>/` (`manifest.yaml` + `connector.py`) et, si besoin, des types dans `ontology/ontology.yaml`. Pas de changement de schéma de base.
 - L'API est en lecture seule. SQL toujours paramétré.
+- Indicateurs techniques (adresses IP, domaines, URL) : jamais stockés. Une source qui en fournit les ramène à des comptes par réseau avant toute écriture.
+- Une source qui exige une clé est optionnelle : `is_configured()` renvoie faux sans elle, la clé se lit dans un fichier de `secrets/`, jamais dans le dépôt ni dans un message.
 - Avant d'écrire un connecteur : lire les conditions d'usage de la source, les noter dans `docs/sources.md`, et ne jamais collecter un champ qui nomme une personne.
 - Une source qui complète les objets d'une autre le déclare dans son manifeste (`after`, `enriches`) et figure après elle dans le registre.
 - Ajouter un domaine à un manifeste impose de régénérer la liste blanche du proxy :

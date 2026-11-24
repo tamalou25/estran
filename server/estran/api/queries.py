@@ -98,11 +98,11 @@ def get_provenance(connection: Connection, object_id: int) -> list[RowMapping]:
 
 
 _NEIGHBORS = """
-    SELECT l.type AS link_type, 'out' AS direction, l.nature, o.type, o.key, o.title
+    SELECT l.type AS link_type, 'out' AS direction, l.nature, l.properties, o.type, o.key, o.title
     FROM links l JOIN objects o ON o.id = l.target_object_id
     WHERE l.source_object_id = :object_id
     UNION ALL
-    SELECT l.type AS link_type, 'in' AS direction, l.nature, o.type, o.key, o.title
+    SELECT l.type AS link_type, 'in' AS direction, l.nature, l.properties, o.type, o.key, o.title
     FROM links l JOIN objects o ON o.id = l.source_object_id
     WHERE l.target_object_id = :object_id
 """
@@ -121,7 +121,7 @@ def get_neighbors(
     # only the one that happens to sort first.
     rows = connection.execute(
         text(
-            "SELECT link_type, direction, nature, type, key, title FROM ("
+            "SELECT link_type, direction, nature, properties, type, key, title FROM ("
             "  SELECT neighbors.*, row_number() OVER ("
             "    PARTITION BY link_type, direction ORDER BY title, key"
             f"  ) AS position FROM ({_NEIGHBORS}) AS neighbors"

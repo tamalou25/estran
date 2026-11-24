@@ -10,6 +10,7 @@ from estran.collector.connectors.ctid import KevAttackMappingConnector
 from estran.collector.connectors.epss import EpssConnector
 from estran.collector.connectors.kev import KevConnector
 from estran.collector.connectors.nvd import NvdConnector
+from estran.collector.connectors.threatfox import ThreatFoxConnector
 from estran.collector.sdk import Connector
 
 REGISTRY: dict[str, type[Connector]] = {
@@ -19,4 +20,5 @@ REGISTRY: dict[str, type[Connector]] = {
     "nvd": NvdConnector,
     "epss": EpssConnector,
     "certfr": CertFrAlertsConnector,
+    "threatfox": ThreatFoxConnector,  # optional: off without a key
 }

@@ -9,3 +9,5 @@
 web/dist
 data/live
 docs
+# Clés de l'utilisateur : jamais dans une image
+secrets

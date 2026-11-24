@@ -104,6 +104,29 @@ describe("object page", () => {
     );
   });
 
+  it("shows the number a link carries, when the ontology says it has one", async () => {
+    const weighted = {
+      ...ontology,
+      link_types: {
+        ...ontology.link_types,
+        affects: { ...ontology.link_types.affects!, weight: { property: "n", label: "indicateurs" } },
+      },
+    };
+    mockApi({
+      ...api,
+      "/api/ontology": weighted,
+      "/api/objects/vulnerability/CVE-2024-10441/neighbors": {
+        total: 1,
+        items: [{ ...neighbors.items[0]!, properties: { n: 1234 } }],
+      },
+    });
+
+    renderApp("/objets/vulnerability/CVE-2024-10441");
+
+    const links = await screen.findByRole("region", { name: "Liens" });
+    expect(await within(links).findByText(/Produit · 1\s234 indicateurs/)).toBeVisible();
+  });
+
   it("uses the inverse wording when the link points at this object", async () => {
     mockApi({
       "/api/ontology": ontology,

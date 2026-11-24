@@ -53,6 +53,7 @@ class Neighbor(BaseModel):
     link_type: str
     direction: Literal["out", "in"]
     nature: Literal["fact", "hypothesis"]
+    properties: dict[str, Any]
     object: ObjectRef
 
 

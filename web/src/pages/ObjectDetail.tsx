@@ -6,7 +6,7 @@ import { PropertyValue } from "../components/PropertyValue";
 import { ProvenanceNote } from "../components/ProvenanceNote";
 import { graphPath } from "./Graph";
 import { Failure, Loading, Notice } from "../components/States";
-import { formatDateTime } from "../lib/format";
+import { formatCount, formatDateTime } from "../lib/format";
 
 // Affichés dans l'en-tête de la fiche, donc pas répétés dans la liste des propriétés.
 const HEADER_PROPERTIES = new Set(["name", "description"]);
@@ -133,6 +133,8 @@ function groupByRelation(items: Neighbor[], ontology: Ontology) {
 
 function NeighborItem({ neighbor, ontology }: { neighbor: Neighbor; ontology: Ontology }) {
   const targetType = ontology.object_types[neighbor.object.type];
+  const weight = ontology.link_types[neighbor.link_type]?.weight;
+  const amount = weight ? neighbor.properties?.[weight.property] : undefined;
 
   return (
     <li className={neighbor.nature === "hypothesis" ? "cable cable--hypothesis" : "cable"}>
@@ -141,7 +143,10 @@ function NeighborItem({ neighbor, ontology }: { neighbor: Neighbor; ontology: On
         <Link to={objectPath(neighbor.object.type, neighbor.object.key)}>
           {neighbor.object.title}
         </Link>
-        <span className="cell-note">{targetType?.label ?? neighbor.object.type}</span>
+        <span className="cell-note">
+          {targetType?.label ?? neighbor.object.type}
+          {typeof amount === "number" && weight && ` · ${formatCount(amount)} ${weight.label}`}
+        </span>
       </span>
     </li>
   );

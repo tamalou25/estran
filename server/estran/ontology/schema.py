@@ -46,9 +46,17 @@ class ObjectType(_Model):
     properties: dict[str, PropertyType]
 
 
+class LinkWeight(_Model):
+    """A number carried by the link itself, shown next to it ("12 indicateurs récents")."""
+
+    property: str
+    label: str
+
+
 class LinkType(_Model):
     label: str
     inverse_label: str
+    weight: LinkWeight | None = None
     source: str = Field(alias="from")
     target: str = Field(alias="to")
 

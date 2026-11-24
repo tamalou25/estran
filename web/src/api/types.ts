@@ -33,6 +33,8 @@ export interface ObjectType {
 export interface LinkType {
   label: string;
   inverse_label: string;
+  /** Nombre porté par le lien lui-même, affiché à côté (« 12 indicateurs sur 7 jours »). */
+  weight?: { property: string; label: string } | null;
   from: string;
   to: string;
 }
@@ -100,6 +102,7 @@ export interface Neighbor {
   link_type: string;
   direction: "out" | "in";
   nature: "fact" | "hypothesis";
+  properties?: Record<string, unknown>;
   object: { type: string; key: string; title: string };
 }
 

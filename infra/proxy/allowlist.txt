@@ -2,7 +2,9 @@
 # Hôtes que le proxy sortant laisse joindre, tirés des manifestes des connecteurs.
 # Régénérer : python -m estran.collector allowlist --write infra/proxy/allowlist.txt
 epss.empiricalsecurity.com
+iptoasn.com
 raw.githubusercontent.com
 services.nvd.nist.gov
+threatfox-api.abuse.ch
 www.cert.cyber.gouv.fr
 www.cisa.gov

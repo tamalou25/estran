@@ -124,7 +124,7 @@ Modèle de menaces et **limites assumées** : [`docs/security.md`](docs/security
 | fait | 0a — Socle | Ontologie, base, connecteur KEV, API, interface |
 | fait | 0b — Durcissement | Réseaux cloisonnés, proxy sortant à liste blanche, conteneurs en lecture seule, scans |
 | fait | 1a — Couche Menace | NVD, EPSS, MITRE ATT&CK, correspondances faille → technique, CERT-FR ; explorateur de graphe |
-| | 1b — Infrastructure d'attaque | abuse.ch (avec clé) et iptoasn : logiciel malveillant → réseau → pays |
+| fait | 1b — Infrastructure d'attaque | abuse.ch (source optionnelle, avec votre clé) et iptoasn : famille de logiciel malveillant → réseau → pays |
 | | 2 — Mon parc | Croiser l'inventaire d'un lab avec les vulnérabilités exploitées |
 | | Bonus | Territoire et Infrastructure (carte, câbles, pannes), enquêtes, assistant local |
 
@@ -137,6 +137,8 @@ Modèle de menaces et **limites assumées** : [`docs/security.md`](docs/security
   quart du catalogue KEV ; les autres failles n'ont pas de lien vers une technique.
 - Hors-ligne, seul le catalogue KEV est disponible (les autres sources ne sont pas embarquées).
 - Seules les alertes du CERT-FR sont collectées, pas ses avis.
+- La source abuse.ch est inactive sans clé (voir [`secrets/README.md`](secrets/README.md)) ;
+  elle ne couvre que les 7 derniers jours et ne localise que les indicateurs de type adresse.
 - Deux produits dont les noms ne diffèrent que par la ponctuation sont fusionnés.
 
 ## Licence

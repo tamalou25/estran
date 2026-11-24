@@ -5,7 +5,7 @@
 # « unit: percent » affiche un nombre entre 0 et 1 comme un pourcentage.
 # Règle éthique : aucun type ni propriété décrivant une personne (refusé au chargement).
 
-version: 2
+version: 3
 
 layers:
   territoire:
@@ -249,7 +249,75 @@ object_types:
         label: Bulletin
         type: url
 
+  malware_family:
+    label: Famille de logiciel malveillant
+    plural: Familles de logiciels malveillants
+    layer: menace
+    description: Famille de logiciel malveillant dont des serveurs ont été signalés récemment.
+    columns: [recent_indicators, aliases]
+    default_sort: {by: recent_indicators, order: desc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+      recent_indicators:
+        label: Indicateurs sur 7 jours
+        type: integer
+      aliases:
+        label: Autres noms
+        type: text_list
+        searchable: true
+      url:
+        label: Fiche Malpedia
+        type: url
+
+  autonomous_system:
+    label: Système autonome
+    plural: Systèmes autonomes
+    layer: infrastructure
+    description: Réseau d'un opérateur, d'un hébergeur ou d'une organisation, identifié par un numéro d'AS.
+    columns: [number]
+    default_sort: {by: title, order: asc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+      number:
+        label: Numéro d'AS
+        type: integer
+
+  country:
+    label: Pays
+    plural: Pays
+    layer: territoire
+    description: Pays où des systèmes autonomes sont enregistrés.
+    columns: []
+    default_sort: {by: title, order: asc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+
 link_types:
+  family_hosted_in:
+    label: a des serveurs dans
+    inverse_label: héberge des serveurs de
+    from: malware_family
+    to: autonomous_system
+    weight:
+      property: indicator_count
+      label: indicateurs sur 7 jours
+  as_registered_in:
+    label: est enregistré en
+    inverse_label: compte le réseau
+    from: autonomous_system
+    to: country
   affects:
     label: affecte
     inverse_label: est affecté par

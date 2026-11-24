@@ -104,7 +104,8 @@ indépendantes pour la même garantie. Il ne suit une redirection que vers un h�
 HTTPS, et trois fois au plus.
 
 Hôtes ouverts à ce jour : `www.cisa.gov`, `services.nvd.nist.gov`,
-`epss.empiricalsecurity.com`, `www.cert.cyber.gouv.fr` et `raw.githubusercontent.com`.
+`epss.empiricalsecurity.com`, `www.cert.cyber.gouv.fr`, `raw.githubusercontent.com`, ainsi que
+`threatfox-api.abuse.ch` et `iptoasn.com` (ouverts même sans clé, mais jamais joints sans elle).
 Ce dernier est **large** : il sert le contenu de tous les dépôts publics de GitHub, pas
 seulement ceux de MITRE. Le proxy ne voyant que le nom d'hôte, un collecteur compromis
 pourrait y lire n'importe quel fichier public (mais pas y écrire).
@@ -123,6 +124,11 @@ y accède par ce groupe.
 | `migrate` | les trois (il crée les rôles) | propriétaire, le temps de la migration |
 | `collector` | le sien | `estran_collector` : lit, insère, met à jour |
 | `api` | le sien | `estran_api` : lit |
+
+Une seule clé vient de l'utilisateur : celle d'abuse.ch, facultative. Elle se dépose dans
+`secrets/abusech_auth_key`, dossier ignoré par git, exclu des images Docker, et monté en
+lecture seule dans le seul conteneur `collector`. Elle voyage dans un en-tête HTTP, jamais
+dans une adresse, et n'apparaît dans aucun message d'erreur ni dans la base.
 
 Changer les mots de passe des rôles `estran_collector` et `estran_api` (procédure testée) :
 

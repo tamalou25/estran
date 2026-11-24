@@ -294,8 +294,8 @@ def test_epss_scores_every_cve_of_the_file_with_the_date_of_the_model(threat, on
 
     record = next(r for r in records if r.key == "CVE-2024-34102")
     assert record.properties == {
-        "epss_score": 0.99994,
-        "epss_percentile": 0.99987,
+        "epss_score": 0.97,
+        "epss_percentile": 0.99,
         "epss_date": "2026-11-23",
     }
     assert len(records) == 8

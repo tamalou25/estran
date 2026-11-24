@@ -65,6 +65,9 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    if not REGISTRY[args.connector]().is_configured():
+        print(f"{args.connector}: not configured (optional source, see secrets/README.md)")  # noqa: T201
+        return 1
     result = run_connector(
         engine,
         ontology,

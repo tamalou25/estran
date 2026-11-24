@@ -17,6 +17,19 @@ Conditions lues le 24/11/2026 sur les pages indiquées.
 | [FIRST EPSS](https://www.first.org/epss/) | Probabilité d'exploitation sous 30 jours | Accès « freely and openly », sans licence explicite | **Non** : collectée et affichée, jamais redistribuée | 24 h |
 | [CERT-FR, alertes](https://www.cert.cyber.gouv.fr/alerte/) | Alertes de sécurité et failles qu'elles citent | [Licence Ouverte 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/) | Autorisée avec attribution | 6 h |
 
+### Source optionnelle (inactive sans clé)
+
+| Source | Ce qu'elle apporte | Conditions | Redistribution | Cadence |
+|---|---|---|---|---|
+| [abuse.ch ThreatFox](https://threatfox.abuse.ch/) | Familles de logiciels malveillants et réseaux où leurs serveurs ont été signalés, sur 7 jours | [Conditions d'usage](https://abuse.ch/terms-of-use/) : usage **non lucratif**, clé obligatoire, volume raisonnable, pas d'entraînement d'IA | **Non** | 24 h |
+| [iptoasn](https://iptoasn.com/) | Table adresse → réseau (AS) → pays, utilisée pour localiser sans rien conserver | Domaine public (PDDL 1.0) | Autorisée | avec ThreatFox |
+
+Ce que cette source **ne conserve pas** : aucune adresse IP, aucun nom de domaine, aucune URL,
+aucun nom de la personne ayant signalé un indicateur. Chaque adresse est remplacée, avant
+même la traduction, par le réseau qui l'annonce ; seuls restent des comptes par famille et par
+réseau. Les domaines ne sont pas résolus (ce serait une requête active). Un usage commercial
+d'Estran imposerait un abonnement auprès de Spamhaus pour cette source.
+
 Mentions obligatoires, affichées sur la page « Sources » et dans la provenance des objets :
 
 - MITRE ATT&CK : « © 2026 The MITRE Corporation. This work is reproduced and distributed with

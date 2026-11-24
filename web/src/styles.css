@@ -677,6 +677,9 @@ td.identifier {
 .node--group { --node: var(--encre); }
 .node--software { --node: var(--estran); }
 .node--alert { --node: var(--terre-fort); }
+.node--malware_family { --node: var(--estran-fort); }
+.node--autonomous_system { --node: #7fb2cf; }
+.node--country { --node: var(--estran-clair); }
 
 .graph {
   display: grid;

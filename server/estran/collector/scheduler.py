@@ -30,14 +30,28 @@ def dependents(manifests: dict[str, Manifest], source_id: str) -> list[str]:
     return [name for name, manifest in manifests.items() if source_id in manifest.after]
 
 
+def runnable(*, mode: Mode) -> list[str]:
+    """Connectors that can run now, in registry order.
+
+    Left out: optional sources without their credential, and, offline, every source that
+    ships no snapshot.
+    """
+    names = []
+    for name, cls in REGISTRY.items():
+        connector = cls()
+        if not connector.is_configured():
+            continue
+        if mode == "snapshot" and not connector.manifest.snapshot:
+            continue
+        names.append(name)
+    return names
+
+
 def serve(
     engine: Engine, ontology: Ontology, *, mode: Mode, snapshot_dir: Path, heartbeat: Path
 ) -> None:
     """Run forever. Every connector is due at start; the heartbeat file proves the loop is alive."""
-    connectors = {name: cls() for name, cls in REGISTRY.items()}
-    if mode == "snapshot":
-        # Offline: only the sources that ship a snapshot can be loaded.
-        connectors = {n: c for n, c in connectors.items() if c.manifest.snapshot}
+    connectors = {name: REGISTRY[name]() for name in runnable(mode=mode)}
     manifests = {name: connector.manifest for name, connector in connectors.items()}
     due = {name: datetime.now(UTC) for name in connectors}
     forced: set[str] = set()

@@ -118,7 +118,7 @@ expect_failure "collector : ne peut pas vider une table" sql_as collector "TRUNC
 expect_failure "collector : ne peut pas modifier le schéma" sql_as collector "ALTER TABLE objects ADD COLUMN estran_check int"
 
 for service in api collector; do
-  seen="$(inside "$service" sh -c 'find /run/secrets /run/estran-secrets -type f 2>/dev/null' | tr -d '\r' | tr '\n' ' ')"
+  seen="$(inside "$service" sh -c "find /run/secrets /run/estran-secrets -type f -not -path '/run/secrets/user/*' 2>/dev/null" | tr -d '\r' | tr '\n' ' ')"
   if [ "$seen" = "/run/secrets/estran/password " ]; then ok "$service : ne voit que son propre mot de passe"; else ko "$service : voit d'autres secrets ($seen)"; fi
 done
 for service in db api collector; do
