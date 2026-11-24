@@ -1,0 +1,31 @@
+# Secrets et configuration locale
+.env
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
+web/dist/
+*.tsbuildinfo
+
+# Données collectées en live : jamais dans le dépôt (seul data/snapshot/ est versionné)
+data/live/
+
+# Notes de travail et réglages locaux de l'assistant : hors dépôt public
+.claude/
+estran-plan-0a.md
+
+# Système et éditeurs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

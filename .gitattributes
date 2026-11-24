@@ -1,0 +1,4 @@
+# Fins de ligne LF partout, y compris sous Windows : les fichiers sont copiés tels quels
+# dans des conteneurs Linux, et l'empreinte de l'instantané ne doit pas dépendre de la machine.
+* text=auto eol=lf
+*.woff2 binary

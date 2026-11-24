@@ -1,0 +1,94 @@
+# Estran — phase 0a. Lancement : docker compose up -d --build
+# Seule l'interface est joignable, et uniquement depuis cette machine (127.0.0.1).
+# Le cloisonnement réseau et le proxy sortant arrivent en phase 0b.
+
+name: estran
+
+x-server: &server
+  build:
+    context: .
+    dockerfile: server/Dockerfile
+    target: runtime
+  image: estran-server
+  environment:
+    # La base n'est joignable que depuis le réseau Docker : le mot de passe par défaut permet
+    # un lancement sans configuration. Pour le changer : copier .env.example en .env.
+    ESTRAN_DATABASE_URL: postgresql+psycopg://estran:${POSTGRES_PASSWORD:-estran}@db:5432/estran
+    ESTRAN_MODE: ${ESTRAN_MODE:-live}
+
+services:
+  db:
+    image: postgis/postgis:18-3.7
+    environment:
+      POSTGRES_DB: estran
+      POSTGRES_USER: estran
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-estran}
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U estran -d estran"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # Met le schéma à jour puis s'arrête. Les autres services attendent qu'il ait réussi.
+  migrate:
+    <<: *server
+    command: ["python", "-m", "estran.db.migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  collector:
+    <<: *server
+    command: ["python", "-m", "estran.collector", "serve"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-m", "estran.collector", "health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    restart: unless-stopped
+
+  api:
+    <<: *server
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      target: runtime
+    image: estran-web
+    ports:
+      - "127.0.0.1:${ESTRAN_WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  db-data:

@@ -1,0 +1,15 @@
+# CISA Known Exploited Vulnerabilities: failles dont l'exploitation réelle est confirmée.
+id: cisa-kev
+name: CISA Known Exploited Vulnerabilities
+version: "1"
+url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+homepage: https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+domains:
+  - www.cisa.gov
+licence: CC0 1.0
+licence_url: https://www.cisa.gov/sites/default/files/licenses/kev/license.txt
+attribution: Cybersecurity and Infrastructure Security Agency (CISA)
+redistributable: true
+# Le catalogue change au plus quelques fois par jour : une requête toutes les 6 h suffit.
+schedule_hours: 6
+snapshot: kev.json

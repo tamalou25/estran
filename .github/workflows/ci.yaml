@@ -1,0 +1,33 @@
+# Les mêmes commandes qu'en local : si ça passe ici, ça passe sur une machine neuve.
+# Les scans d'images, la détection de secrets et le SBOM s'ajoutent en phase 0b.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint, typage et tests du serveur (sur vraie base PostGIS)
+        run: docker compose -f compose.test.yaml run --rm tests
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint, typage et tests de l'interface
+        run: docker compose -f compose.test.yaml run --rm web-tests
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construction des images de production
+        run: docker compose build

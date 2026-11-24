@@ -1,0 +1,98 @@
+# Ontologie d'Estran : la seule description du « monde » que la plateforme connaît.
+# La base, l'API et l'interface en découlent. Ajouter un type se fait ici, pas dans le code.
+#
+# Types de propriété : text, integer, number, boolean, date, datetime, url, enum, text_list.
+# Règle éthique : aucun type ni propriété décrivant une personne (refusé au chargement).
+
+version: 1
+
+layers:
+  territoire:
+    label: Territoire
+  infrastructure:
+    label: Infrastructure
+  menace:
+    label: Menace
+
+object_types:
+  vulnerability:
+    label: Vulnérabilité
+    plural: Vulnérabilités
+    layer: menace
+    description: Faille de sécurité référencée par un identifiant CVE.
+    columns: [kev_date_added, ransomware_use, due_date]
+    default_sort: {by: kev_date_added, order: desc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+      description:
+        label: Description
+        type: text
+        searchable: true
+      kev_date_added:
+        label: Ajout au catalogue KEV
+        type: date
+      ransomware_use:
+        label: Usage par rançongiciel
+        type: enum
+        values:
+          known: Avéré
+          unknown: Non connu
+      required_action:
+        label: Action requise
+        type: text
+      due_date:
+        label: Échéance de correction
+        type: date
+      cwes:
+        label: Faiblesses (CWE)
+        type: text_list
+      notes:
+        label: Notes
+        type: text
+      cve_url:
+        label: Fiche CVE
+        type: url
+
+  product:
+    label: Produit
+    plural: Produits
+    layer: menace
+    description: Logiciel ou matériel touché par des vulnérabilités.
+    columns: []
+    default_sort: {by: title, order: asc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+
+  vendor:
+    label: Éditeur
+    plural: Éditeurs
+    layer: menace
+    description: Organisation qui édite ou fabrique des produits.
+    columns: []
+    default_sort: {by: title, order: asc}
+    properties:
+      name:
+        label: Nom
+        type: text
+        required: true
+        searchable: true
+
+link_types:
+  affects:
+    label: affecte
+    inverse_label: est affecté par
+    from: vulnerability
+    to: product
+  made_by:
+    label: édité par
+    inverse_label: édite
+    from: product
+    to: vendor

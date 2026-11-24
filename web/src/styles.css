@@ -1,0 +1,688 @@
+/*
+ * Estran — le vocabulaire graphique d'une carte marine.
+ *   mer          eau profonde : le fond de page, presque blanc
+ *   petits fonds bleu des faibles profondeurs : ce qui est encore sous l'eau
+ *   estran       vert de la zone qui découvre à marée basse : ce qui est émergé, la marque
+ *   magenta      la couleur des annotations et des câbles sous-marins sur une carte : les liens
+ *   terre        chamois des terres émergées : ce qui demande l'attention
+ * L'italique suit l'usage hydrographique : il signale ce qui vient « de l'eau », ici la source.
+ */
+
+:root {
+  --mer: #f6fafb;
+  --petits-fonds: #dcebf2;
+  --grands-fonds: #c3dcea;
+  --estran: #c5d8a4;
+  --estran-clair: #e4edd3;
+  --estran-fort: #3d5727;
+  --magenta: #a8286a;
+  --terre: #f1e4b9;
+  --terre-fort: #6a5411;
+  --encre: #17202e;
+  --encre-douce: #4a5567;
+  --trait: #b7c5ce;
+  --blanc: #ffffff;
+
+  --texte: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --titre: "Barlow Semi Condensed", "Barlow", "Segoe UI", system-ui, sans-serif;
+
+  --mesure: 68ch;
+  --gouttiere: clamp(1rem, 4vw, 3rem);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--mer);
+  color: var(--encre);
+  font-family: var(--texte);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+#root {
+  display: contents;
+}
+
+h1,
+h2 {
+  font-family: var(--titre);
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(1.9rem, 1.4rem + 2vw, 2.75rem);
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 1.3rem;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--magenta);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--magenta);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999rem;
+  top: 0.5rem;
+  background: var(--blanc);
+  padding: 0.5rem 0.75rem;
+  z-index: 10;
+}
+
+.skip-link:focus {
+  left: var(--gouttiere);
+}
+
+/* --- cartouche : bandeau du haut ------------------------------------------------------- */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 2.5rem;
+  padding: 1.1rem var(--gouttiere) 0.9rem;
+  border-bottom: 1px solid var(--trait);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--titre);
+  font-weight: 600;
+  font-size: 1.45rem;
+  color: var(--encre);
+  text-decoration: none;
+}
+
+.wordmark svg {
+  color: var(--magenta);
+}
+
+.masthead ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.masthead nav a {
+  color: var(--encre);
+  text-decoration: none;
+  padding-block: 0.3rem;
+  border-bottom: 3px solid transparent;
+}
+
+.masthead nav a:hover {
+  border-bottom-color: var(--trait);
+}
+
+.masthead nav a[aria-current="page"] {
+  border-bottom-color: var(--estran-fort);
+  font-weight: 500;
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 78rem;
+  padding: clamp(1.5rem, 4vw, 3rem) var(--gouttiere) 4rem;
+}
+
+.colophon {
+  padding: 1.25rem var(--gouttiere);
+  border-top: 1px solid var(--trait);
+  color: var(--encre-douce);
+  font-size: 0.9rem;
+}
+
+.lead {
+  max-width: var(--mesure);
+  margin-top: 0.75rem;
+  font-size: 1.125rem;
+  color: var(--encre-douce);
+}
+
+.page > h1 + .lead {
+  margin-bottom: 1.75rem;
+}
+
+.page > h1:last-child,
+.page > h1 + .toolbar {
+  margin-top: 0;
+}
+
+/* --- accueil : les strates, du large vers la terre ------------------------------------- */
+
+.home__intro {
+  margin-bottom: clamp(1.75rem, 4vw, 3rem);
+}
+
+.home__intro h1 {
+  font-size: clamp(2.4rem, 1.5rem + 4.4vw, 4.5rem);
+  letter-spacing: -0.02em;
+  max-width: 14ch;
+}
+
+.strata {
+  display: grid;
+  border: 1px solid var(--trait);
+}
+
+.stratum {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) 1fr;
+  gap: 0.5rem 2rem;
+  align-items: start;
+  padding: 1.5rem clamp(1rem, 3vw, 2rem);
+}
+
+.stratum + .stratum {
+  border-top: 1px solid var(--trait);
+}
+
+.stratum--submerged {
+  background: var(--petits-fonds);
+}
+
+.stratum--submerged:first-child {
+  background: var(--grands-fonds);
+}
+
+/* La laisse de mer : le bord ondulé où l'eau se retire. */
+.stratum--uncovered {
+  position: relative;
+  background: var(--estran);
+  padding-top: 2.25rem;
+}
+
+.stratum--uncovered::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 0.75rem;
+  background: var(--petits-fonds);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 12' preserveAspectRatio='none'%3E%3Cpath d='M0 0h48v5c-6 0-6 6-12 6s-6-6-12-6-6 6-12 6S6 5 0 5z'/%3E%3C/svg%3E")
+    repeat-x left top / 3rem 100%;
+}
+
+.stratum__empty {
+  color: var(--encre-douce);
+  font-style: italic;
+}
+
+.stratum__types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1.5rem 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.stratum__types a {
+  display: inline-flex;
+  flex-direction: column;
+  color: var(--encre);
+  text-decoration: none;
+  font-family: var(--titre);
+  font-weight: 500;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.stratum__types a:hover span:last-child {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
+.stratum__count {
+  font-weight: 600;
+  font-size: 2.5rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+.stratum__types p {
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+  color: var(--estran-fort);
+  max-width: 34ch;
+}
+
+.home__sources {
+  margin-top: 1.25rem;
+  color: var(--encre-douce);
+}
+
+/* --- outils de liste -------------------------------------------------------------------- */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem 2rem;
+  margin-block: 1.75rem 1.25rem;
+}
+
+.toolbar form {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1 1 20rem;
+  max-width: 34rem;
+}
+
+input[type="search"],
+select {
+  font: inherit;
+  color: var(--encre);
+  background: var(--blanc);
+  border: 1px solid var(--encre-douce);
+  border-radius: 3px;
+  padding: 0.5rem 0.7rem;
+  min-height: 2.6rem;
+}
+
+input[type="search"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.filter {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+  color: var(--encre-douce);
+}
+
+.button {
+  font: inherit;
+  font-weight: 500;
+  color: var(--blanc);
+  background: var(--estran-fort);
+  border: 1px solid var(--estran-fort);
+  border-radius: 3px;
+  padding: 0.5rem 1rem;
+  min-height: 2.6rem;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--encre);
+  border-color: var(--encre);
+}
+
+.button:disabled {
+  background: transparent;
+  color: var(--encre-douce);
+  border-color: var(--trait);
+  cursor: not-allowed;
+}
+
+.result-count {
+  color: var(--encre-douce);
+  margin-bottom: 0.5rem;
+}
+
+/* --- tableaux --------------------------------------------------------------------------- */
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+/* Un tableau à nombreuses colonnes défile horizontalement plutôt que de s'écraser. */
+.table--wide {
+  min-width: 46rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.65rem 1rem 0.65rem 0;
+  border-bottom: 1px solid var(--trait);
+}
+
+th {
+  font-family: var(--titre);
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--encre);
+}
+
+th button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+th button::after {
+  content: "";
+  display: inline-block;
+  width: 0.9em;
+  margin-left: 0.25em;
+  color: var(--magenta);
+}
+
+th[aria-sort="ascending"] button::after {
+  content: "▲";
+  font-size: 0.7em;
+}
+
+th[aria-sort="descending"] button::after {
+  content: "▼";
+  font-size: 0.7em;
+}
+
+tbody tr:hover {
+  background: var(--blanc);
+}
+
+.numeric {
+  text-align: right;
+}
+
+.identifier {
+  font-family: var(--titre);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Un identifiant CVE tient sur une ligne ; une clé plus longue se replie au lieu de
+   pousser la colonne « Nom » hors de l'écran. */
+td.identifier {
+  min-width: 9.5rem;
+  max-width: 18rem;
+  overflow-wrap: anywhere;
+}
+
+.cell-note {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--encre-douce);
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 2px;
+  font-size: 0.9rem;
+  background: var(--petits-fonds);
+}
+
+/* « Avéré » : la couleur de la terre, ce qui dépasse et sur quoi on peut s'échouer. */
+.tag--known {
+  background: var(--terre);
+  color: var(--terre-fort);
+  font-weight: 500;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.run--failed {
+  color: var(--terre-fort);
+  font-weight: 500;
+}
+
+.run__error {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--encre-douce);
+}
+
+/* --- fiche d'objet : le relevé au centre, la note de marge à droite ---------------------- */
+
+.sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
+  gap: 2.5rem clamp(2rem, 5vw, 4.5rem);
+  align-items: start;
+}
+
+.sheet__kind {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--encre-douce);
+}
+
+.sheet__main section {
+  margin-top: 2.5rem;
+}
+
+.sheet__main h2 {
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--encre);
+  margin-bottom: 0.25rem;
+}
+
+.sheet__seen {
+  margin-top: 2.5rem;
+  font-size: 0.9rem;
+  color: var(--encre-douce);
+}
+
+.properties {
+  margin: 0;
+}
+
+.properties > div {
+  display: grid;
+  grid-template-columns: minmax(9rem, 15rem) 1fr;
+  gap: 0.25rem 1.5rem;
+  padding-block: 0.7rem;
+  border-bottom: 1px solid var(--trait);
+}
+
+.properties dt {
+  color: var(--encre-douce);
+}
+
+.properties dd {
+  margin: 0;
+  max-width: var(--mesure);
+  overflow-wrap: anywhere;
+}
+
+/* Les liens sont tracés comme les câbles sous-marins d'une carte : une ligne ondulée magenta
+   qui part de l'objet et atterrit sur son voisin. */
+.cables {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cable {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) 1fr;
+  gap: 0 0.75rem;
+  align-items: start;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--trait);
+}
+
+.cable__relation {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-style: italic;
+  color: var(--magenta);
+  white-space: nowrap;
+}
+
+.cable__relation::after {
+  content: "";
+  flex: 1;
+  min-width: 2rem;
+  height: 0.7rem;
+  background: var(--magenta);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 10'%3E%3Cpath d='M0 5c2.5-5 5-5 7.5 0s5 5 7.5 0 2.5-2.5 5 0' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")
+    repeat-x left center / 1.25rem 100%;
+}
+
+/* Une hypothèse n'est pas un fait : son câble est interrompu. */
+.cable--hypothesis .cable__relation::after {
+  mask-size: 2.5rem 100%;
+  opacity: 0.6;
+}
+
+.cable__target {
+  position: relative;
+  padding-left: 1.4rem;
+}
+
+.cable__target::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.38em;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid var(--magenta);
+  border-radius: 50%;
+  background: var(--mer);
+}
+
+.marginalia {
+  border-left: 1px solid var(--magenta);
+  padding-left: 1.25rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--encre-douce);
+}
+
+.marginalia h2 {
+  font-style: normal;
+  font-size: 1.05rem;
+  color: var(--magenta);
+  margin-bottom: 0.75rem;
+}
+
+.marginalia dl {
+  margin: 0;
+}
+
+.marginalia dl + dl {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--trait);
+}
+
+.marginalia dt {
+  font-style: normal;
+  font-size: 0.85rem;
+  color: var(--encre);
+  margin-top: 0.7rem;
+}
+
+.marginalia dt:first-child {
+  margin-top: 0;
+}
+
+.marginalia dd {
+  margin: 0;
+}
+
+/* --- états ------------------------------------------------------------------------------ */
+
+.state {
+  max-width: var(--mesure);
+  padding: 1rem 1.25rem;
+  background: var(--petits-fonds);
+  border-left: 3px solid var(--grands-fonds);
+}
+
+.state--error {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  background: var(--terre);
+  border-left-color: var(--terre-fort);
+}
+
+/* --- petits écrans ---------------------------------------------------------------------- */
+
+@media (max-width: 56rem) {
+  .sheet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 40rem) {
+  .stratum,
+  .properties > div,
+  .cable {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cable__relation::after {
+    max-width: 6rem;
+  }
+
+  th,
+  td {
+    padding-right: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a,
+  .button {
+    transition:
+      background-color 120ms,
+      border-color 120ms;
+  }
+}
